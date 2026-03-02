@@ -1,0 +1,73 @@
+{
+  "projectType": "saas",
+  "projectName": "Simple Charts",
+  "projectDescription": "A web app for educators to quickly create pie and bar charts from classroom data and export them as high-quality images.",
+  "theme": "almond",
+  "primaryColor": "#8b5cf6",
+  "lightColor": "#a78bfa",
+  "darkColor": "#7c3aed",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/chart-types",
+              "features/data-entry",
+              "features/color-themes",
+              "features/export-options",
+              "features/localization"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/deployment",
+              "guides/pwa-installation",
+              "guides/customization"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Technical",
+            "pages": [
+              "reference/architecture",
+              "reference/storage",
+              "reference/configuration"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Pie and bar chart creation with simple data entry",
+    "Curated color themes plus custom color picker",
+    "PNG export at multiple resolutions with transparent or white backgrounds",
+    "Local auto-save of worksheet data",
+    "PWA-ready for installable app experience",
+    "Bengali numeral support for localization"
+  ],
+  "publicApiSurface": [
+    "ChartBuilderPage - Main chart creation interface",
+    "DataTableEditor - Row-based data entry component",
+    "ChartPreview - Real-time chart rendering with Chart.js",
+    "ChartControlsPanel - Chart type, colors, and display options",
+    "ExportActions - PNG export with resolution and background controls",
+    "usePersistedState - Hook for localStorage auto-save",
+    "useTheme - Hook for light/dark theme management",
+    "CHART_PALETTES - Pre-defined color palette configurations",
+    "validateRows - Data validation for chart generation",
+    "downloadChartAsPng - Chart export utility"
+  ]
+}
