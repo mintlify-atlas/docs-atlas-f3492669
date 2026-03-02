@@ -1,0 +1,164 @@
+---
+title: "Introduction"
+description: "Create polished pie and bar charts in seconds - designed for teachers and educators"
+---
+
+## Welcome to Simple Charts
+
+Simple Charts is a single-page web application built by ABM Labs that helps teachers quickly create professional pie and bar charts from classroom data. Whether you're visualizing poll results, quiz scores, or student responses, Simple Charts gets you from data to beautiful charts in seconds.
+
+<CardGroup cols={3}>
+  <Card
+    title="Get Started"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Create your first chart in under a minute
+  </Card>
+  <Card
+    title="Chart Types"
+    icon="chart-pie"
+    href="/features/chart-types"
+  >
+    Explore pie and bar chart options
+  </Card>
+  <Card
+    title="Deploy Your Own"
+    icon="cloud-arrow-up"
+    href="/guides/deployment"
+  >
+    Host Simple Charts on Cloudflare Pages
+  </Card>
+</CardGroup>
+
+## Why Simple Charts?
+
+Simple Charts was designed specifically for educators who need to create quick, professional visualizations without complex tools.
+
+### Built for the Classroom
+
+- **Fast data entry** - Simple table interface for entering answer choices and counts
+- **Instant preview** - See your chart update live as you type
+- **No sign-up required** - Start creating charts immediately at [charts.abmcodes.xyz](https://charts.abmcodes.xyz)
+- **Works offline** - Install as a Progressive Web App on Android devices
+
+### Professional Results
+
+- **Curated color themes** - Six professionally designed palettes optimized for worksheets, slides, and printouts
+- **High-resolution export** - Download charts as PNG at 2x, 4x, or 8x resolution with white or transparent backgrounds
+- **Customizable styling** - Control titles, legends, labels, axis names, and more
+- **Print-safe colors** - All themes maintain clarity when printed
+
+### Smart Features
+
+- **Auto-save** - Your last worksheet is automatically saved in local storage
+- **Bilingual support** - Handles both Latin and Bengali numerals seamlessly (src/App.jsx:26)
+- **Flexible value modes** - Enter data as exact numbers or percentages
+- **Real-time validation** - Helpful error messages guide you to valid chart configurations
+
+## Key Features at a Glance
+
+<AccordionGroup>
+  <Accordion icon="table" title="Simple Data Entry">
+    Enter your data in a clean, spreadsheet-like table. Each row has a label (like "Option A" or "Strongly Agree") and a value (the count or percentage). Add rows, remove rows, or clear everything with one click.
+    
+    The table validates your input in real-time, showing helpful messages if values are invalid or if percentages don't add up to 100.
+  </Accordion>
+
+  <Accordion icon="chart-simple" title="Dual Chart Types">
+    Switch between **pie charts** (perfect for showing proportions) and **bar charts** (ideal for comparisons) with a single click.
+    
+    Each chart type adapts automatically - pie charts show percentage breakdowns with optional value labels, while bar charts include customizable X and Y axis labels.
+  </Accordion>
+
+  <Accordion icon="palette" title="Professional Color Themes">
+    Choose from six carefully crafted color palettes:
+    - **Classroom** - Balanced tones for everyday worksheets
+    - **Soft Report** - Muted, professional colors for handouts
+    - **Pastel Math** - Light, readable palette for younger students
+    - **Print Safe** - High-contrast colors that print clearly
+    - **Science Lab** - Cool tones with crisp separation
+    - **Editorial** - Clean palette for presentations
+    
+    Or enable advanced mode to assign custom colors to individual data points.
+  </Accordion>
+
+  <Accordion icon="download" title="High-Quality Export">
+    Export your charts as PNG images at three quality levels:
+    - **Low** (2x) - ~800KB, perfect for web use
+    - **Medium** (4x) - ~1.5MB, recommended for most uses
+    - **High** (8x) - ~3MB, for maximum print quality
+    
+    Choose between white or transparent backgrounds depending on where you'll use the chart.
+  </Accordion>
+
+  <Accordion icon="globe" title="Localization Support">
+    Simple Charts automatically detects Bengali numerals in your input and formats the chart accordingly. If all values use Bengali numerals, the entire chart (including axes) will display in Bengali.
+    
+    This makes it perfect for multilingual classrooms and international schools.
+  </Accordion>
+
+  <Accordion icon="mobile" title="Progressive Web App">
+    Install Simple Charts as a standalone app on Android devices for offline access. Your data stays private - everything runs in your browser with no server uploads.
+  </Accordion>
+</AccordionGroup>
+
+## Live Application
+
+Simple Charts is available online at:
+
+<Card
+  title="charts.abmcodes.xyz"
+  icon="arrow-up-right-from-square"
+  href="https://charts.abmcodes.xyz"
+>
+  Open Simple Charts and create your first chart now
+</Card>
+
+## Technology Stack
+
+Simple Charts is built with modern web technologies:
+
+- **React 19** - Latest React with concurrent features
+- **Chart.js 4.5** - Powerful charting library via react-chartjs-2
+- **Vite** - Lightning-fast build tool and dev server
+- **Tailwind CSS** - Utility-first styling
+- **Radix UI** - Accessible component primitives
+- **PWA** - Installable web app with offline support
+
+<Note>
+  Simple Charts is completely free and open source. Check out the [GitHub repository](https://github.com/abmprottoy/charts) to explore the code or contribute improvements.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start Guide"
+    icon="play"
+    href="/quickstart"
+  >
+    Follow our step-by-step guide to create your first chart
+  </Card>
+  <Card
+    title="Explore Features"
+    icon="stars"
+    href="/features/chart-types"
+  >
+    Learn about all the customization options
+  </Card>
+  <Card
+    title="Deploy Your Own"
+    icon="server"
+    href="/guides/deployment"
+  >
+    Host a private instance for your school
+  </Card>
+  <Card
+    title="Technical Reference"
+    icon="code"
+    href="/reference/architecture"
+  >
+    Dive into the implementation details
+  </Card>
+</CardGroup>

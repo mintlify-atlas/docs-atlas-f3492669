@@ -1,0 +1,342 @@
+---
+title: Localization
+description: Learn about Bengali numeral support and automatic digit conversion
+---
+
+Simple Charts includes built-in support for Bengali numerals (০-৯), allowing users to enter data using Bengali digits which are automatically converted and displayed appropriately throughout the interface and exported charts.
+
+## Bengali Digit Support
+
+The application recognizes and processes Bengali numerals (০ ১ ২ ৩ ৪ ৫ ৬ ৭ ৮ ৯) in addition to standard Latin digits (0-9).
+
+### Digit Mapping
+
+Two mapping objects handle conversion between Bengali and Latin numerals:
+
+<CodeGroup>
+```javascript Bengali to Latin
+// From App.jsx:26-37
+const BENGALI_DIGITS = {
+  "০": "0",
+  "১": "1",
+  "২": "2",
+  "৩": "3",
+  "৪": "4",
+  "৫": "5",
+  "৬": "6",
+  "৭": "7",
+  "৮": "8",
+  "৯": "9"
+};
+```
+
+```javascript Latin to Bengali
+// From App.jsx:38-49
+const LATIN_TO_BENGALI_DIGITS = {
+  "0": "০",
+  "1": "১",
+  "2": "২",
+  "3": "৩",
+  "4": "৪",
+  "5": "৫",
+  "6": "৬",
+  "7": "৭",
+  "8": "৮",
+  "9": "৯"
+};
+```
+</CodeGroup>
+
+## Input Normalization
+
+When users enter data, Bengali numerals are automatically converted to Latin numerals for internal processing:
+
+```javascript
+// From App.jsx:51-59
+function normalizeNumericInput(value) {
+  return String(value)
+    .trim()
+    .replace(/[০-৯]/g, (digit) => BENGALI_DIGITS[digit] ?? digit)
+    .replace(/[%٪]/g, "")
+    .replace(/[٬,]/g, "")
+    .replace(/٫/g, ".")
+    .replace(/[−–—]/g, "-");
+}
+```
+
+This function:
+- Converts Bengali digits (০-৯) to Latin digits (0-9)
+- Removes percentage symbols (% and ٪)
+- Removes thousand separators (٬ and ,)
+- Converts Arabic decimal separator (٫) to period (.)
+- Normalizes various dash characters to minus sign (-)
+
+<Info>
+  The normalization function supports multiple numeral systems and formatting conventions, making the application accessible to diverse user bases.
+</Info>
+
+## Number Parsing
+
+After normalization, the string is parsed into a JavaScript number:
+
+```javascript
+// From App.jsx:61-67
+function parseLocalizedNumber(value) {
+  const normalized = normalizeNumericInput(value);
+  if (!normalized || normalized === "-" || normalized === "." || normalized === "-.") {
+    return Number.NaN;
+  }
+  return Number(normalized);
+}
+```
+
+This handles edge cases like:
+- Empty strings
+- Lone minus signs
+- Lone decimal points
+- Incomplete negative decimals
+
+## Converting to Bengali
+
+When displaying numbers that were originally entered in Bengali, they are converted back:
+
+```javascript
+// From App.jsx:69-71
+function toBengaliDigits(value) {
+  return String(value).replace(/\d/g, (digit) => LATIN_TO_BENGALI_DIGITS[digit] ?? digit);
+}
+```
+
+This function replaces every Latin digit (0-9) with its Bengali equivalent (০-৯).
+
+## Chart Number Formatting
+
+Numbers are formatted for display on charts with optional Bengali numeral conversion:
+
+```javascript
+// From App.jsx:73-83
+function formatChartNumber(value, useBengaliNumerals) {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+
+  const valueText = Number.isInteger(value)
+    ? String(value)
+    : String(Number(value.toFixed(2))).replace(/\.0$/, "");
+
+  return useBengaliNumerals ? toBengaliDigits(valueText) : valueText;
+}
+```
+
+This function:
+1. Returns empty string for non-finite numbers (NaN, Infinity)
+2. Formats integers as-is
+3. Formats decimals to 2 decimal places, removing trailing ".0"
+4. Converts to Bengali numerals if requested
+
+### Format Examples
+
+<Tabs>
+  <Tab title="Latin Numerals">
+    ```
+    5 → "5"
+    15.5 → "15.5"
+    100.00 → "100"
+    3.14159 → "3.14"
+    ```
+  </Tab>
+
+  <Tab title="Bengali Numerals">
+    ```
+    5 → "৫"
+    15.5 → "১৫.৫"
+    100.00 → "১০০"
+    3.14159 → "৩.১৪"
+    ```
+  </Tab>
+</Tabs>
+
+## Tracking Input Language
+
+The validation system detects whether Bengali numerals were used in the input:
+
+```javascript
+// From App.jsx:207-213
+if (!fieldErrors[row.id].label && !fieldErrors[row.id].value) {
+  validRows.push({
+    ...row,
+    label,
+    value: parseLocalizedNumber(valueText),
+    useBengaliNumerals: /[০-৯]/.test(valueText)
+  });
+}
+```
+
+The regex `/[০-৯]/` checks if the input contains any Bengali digits. This boolean flag is stored with each data row.
+
+## Chart Display
+
+Bengali numerals are used in multiple chart contexts:
+
+### 1. Tooltips
+
+Tooltips show values in the same numeral system used for input:
+
+```javascript
+// From App.jsx:393-408
+callbacks: {
+  label: (context) => {
+    const numericValue =
+      options.chartType === "bar"
+        ? Number(context.parsed?.y)
+        : Number(context.parsed);
+
+    const localizedForPoint = Boolean(
+      chartRows[context.dataIndex]?.useBengaliNumerals
+    );
+    const formattedValue = formatChartNumber(numericValue, localizedForPoint);
+    const labelPrefix = context.label ? `${context.label}: ` : "";
+    const suffix = options.valueMode === "percentage" ? "%" : "";
+
+    return `${labelPrefix}${formattedValue}${suffix}`;
+  }
+}
+```
+
+### 2. Value Labels
+
+On-chart value labels respect the input language for each data point:
+
+```javascript
+// From App.jsx:411-417
+valueOverlay: {
+  enabled: options.showLabels,
+  color: "#1f2937",
+  font: '600 11px "Inter", "Segoe UI", system-ui, -apple-system, "Noto Serif Bengali", "Nirmala UI", sans-serif',
+  valueMode: options.valueMode,
+  useBengaliNumeralsByIndex: valueLocaleByIndex
+}
+```
+
+Note the font stack includes "Noto Serif Bengali" and "Nirmala UI" to ensure proper Bengali numeral rendering.
+
+### 3. Y-Axis (Bar Charts)
+
+For bar charts, the Y-axis uses Bengali numerals only if ALL data points were entered in Bengali:
+
+```javascript
+// From App.jsx:295-302
+const valueLocaleByIndex = useMemo(
+  () => chartRows.map((row) => Boolean(row.useBengaliNumerals)),
+  [chartRows]
+);
+const useBengaliNumeralsOnAxis = useMemo(
+  () => valueLocaleByIndex.length > 0 && valueLocaleByIndex.every(Boolean),
+  [valueLocaleByIndex]
+);
+```
+
+```javascript
+// From App.jsx:441-449
+ticks: {
+  color: axisTextColor,
+  callback: (tickValue) => {
+    const formatted = formatChartNumber(
+      Number(tickValue),
+      useBengaliNumeralsOnAxis
+    );
+    return options.valueMode === "percentage" ? `${formatted}%` : formatted;
+  }
+}
+```
+
+<Note>
+  The axis uses Bengali numerals only when ALL values were entered in Bengali. This prevents mixing numeral systems on a single axis, which would be confusing.
+</Note>
+
+## Mixed Input Handling
+
+Users can enter some values in Bengali and others in Latin numerals within the same chart:
+
+```javascript
+// From App.jsx:317-333
+const chartData = useMemo(
+  () => ({
+    labels: chartRows.map((row) => row.label),
+    datasets: [
+      {
+        label: options.valueMode === "percentage" ? "Percentage" : "Value",
+        data: chartRows.map((row) => row.value),
+        useBengaliNumeralsByIndex: valueLocaleByIndex,
+        backgroundColor: resolvedColors,
+        borderColor: options.chartType === "pie" ? "#ffffff" : resolvedColors,
+        borderWidth: options.chartType === "pie" ? 2 : 1,
+        borderRadius: options.chartType === "bar" ? 10 : 0
+      }
+    ]
+  }),
+  [chartRows, options.valueMode, options.chartType, resolvedColors]
+);
+```
+
+The `useBengaliNumeralsByIndex` array tracks which specific data points should display in Bengali.
+
+## Font Support
+
+The application ensures Bengali numerals render correctly by including appropriate fonts:
+
+```javascript
+// From App.jsx:414
+font: '600 11px "Inter", "Segoe UI", system-ui, -apple-system, "Noto Serif Bengali", "Nirmala UI", sans-serif'
+```
+
+This font stack prioritizes:
+1. **Inter** - Modern sans-serif (primary interface font)
+2. **Segoe UI** - Windows system font
+3. **system-ui** - Platform default
+4. **-apple-system** - macOS/iOS default
+5. **Noto Serif Bengali** - Google font with excellent Bengali support
+6. **Nirmala UI** - Windows font with Indic script support
+7. **sans-serif** - Generic fallback
+
+## Use Cases
+
+### Bengali-Speaking Classrooms
+
+Teachers working with Bengali-speaking students can:
+- Enter data directly in Bengali numerals
+- Generate charts that display values in familiar numerals
+- Export charts for Bengali-language materials
+
+### Mixed Language Environments
+
+- Students can use whichever numeral system they're comfortable with
+- Data entered in Bengali displays in Bengali
+- Data entered in Latin displays in Latin
+- No manual conversion required
+
+### International Education
+
+- Support for diverse student populations
+- Respect for linguistic preferences
+- Automatic handling reduces errors
+
+<Info>
+  While Simple Charts currently implements Bengali numerals specifically, the architecture could be extended to support other numeral systems like Arabic-Indic, Devanagari, or Persian numerals.
+</Info>
+
+## Edge Cases Handled
+
+1. **Mixing numeral systems in one input**: Normalized to Latin internally
+2. **Empty Bengali input**: Handled as NaN, triggers validation error
+3. **Decimal numbers in Bengali**: Decimal point remains as "." (not converted)
+4. **Negative Bengali numbers**: Minus sign supported with any numeral system
+5. **Percentage symbols with Bengali**: Symbol stripped, numerals converted
+
+## Implementation Notes
+
+- Bengali detection uses regex: `/[০-৯]/`
+- Conversion is lossless (no rounding during conversion)
+- Display format honors the input language per data point
+- Axis format uses Bengali only when ALL inputs are Bengali
+- Validation works identically regardless of numeral system used

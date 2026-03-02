@@ -1,0 +1,221 @@
+---
+title: Chart Types
+description: Learn about the pie and bar chart types available in Simple Charts
+---
+
+Simple Charts supports two chart types optimized for classroom data visualization: **Pie Charts** and **Bar Charts**. Each type is designed to clearly present survey results, poll data, and other educational datasets.
+
+## Available Chart Types
+
+<Tabs>
+  <Tab title="Pie Chart">
+    Pie charts display data as proportional slices of a circle, making them ideal for showing relative percentages and part-to-whole relationships.
+
+    ### Best For
+    - Survey responses with multiple choice answers
+    - Showing how parts make up a whole
+    - Data where percentages are important
+    - Limited number of categories (typically 2-8)
+
+    ### Validation Rules
+    Pie charts have specific requirements to ensure they render correctly:
+
+    <Note>
+      - **No negative values** - All values must be zero or positive
+      - **At least one positive value** - Need at least one value above zero
+      - **Percentage mode** - When using percentages, totals should be close to 100%
+    </Note>
+
+    ### Visual Options
+    ```javascript
+    // From App.jsx:326-329
+    {
+      backgroundColor: resolvedColors,
+      borderColor: "#ffffff",
+      borderWidth: 2,
+      borderRadius: 0
+    }
+    ```
+
+    Pie charts include white borders between slices for clear visual separation.
+  </Tab>
+
+  <Tab title="Bar Chart">
+    Bar charts display data as horizontal or vertical bars, excellent for comparing values across categories.
+
+    ### Best For
+    - Comparing quantities across multiple items
+    - Displaying data with negative values
+    - Showing trends or rankings
+    - Data with many categories
+
+    ### Visual Options
+    ```javascript
+    // From App.jsx:328-329
+    {
+      borderColor: resolvedColors,
+      borderWidth: 1,
+      borderRadius: 10
+    }
+    ```
+
+    Bar charts feature rounded corners (10px radius) for a modern, friendly appearance.
+
+    ### Axis Configuration
+    Bar charts include configurable X and Y axes with the following features:
+
+    - **Grid lines** - Horizontal grid lines for easier value reading
+    - **Axis labels** - Optional custom labels for both axes
+    - **Auto-scaling** - Y-axis begins at zero for positive values
+    - **Negative value support** - Automatically adjusts scale for negative values
+
+    ```javascript
+    // From App.jsx:439-441
+    y: {
+      beginAtZero: !hasNegativeBarValue,
+      // ... additional configuration
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Chart Configuration
+
+### Common Options
+
+Both chart types share these configurable options:
+
+<CodeGroup>
+```javascript Chart Options Structure
+// From App.jsx:340-486
+{
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: {
+    duration: 350
+  },
+  plugins: {
+    legend: {
+      display: options.showLegend,
+      position: "bottom",
+      labels: {
+        usePointStyle: true,
+        boxWidth: 12,
+        padding: 16,
+        color: "#334155"
+      }
+    },
+    title: {
+      display: Boolean(options.title.trim()),
+      text: options.title.trim(),
+      color: "#0f172a",
+      font: {
+        size: 17,
+        weight: "600"
+      }
+    },
+    tooltip: {
+      backgroundColor: "#0f172a",
+      titleColor: "#ffffff",
+      bodyColor: "#ffffff",
+      padding: 10,
+      cornerRadius: 10
+    }
+  }
+}
+```
+
+```javascript Default State
+// From App.jsx:100-119
+function buildDefaultState() {
+  return {
+    rows: [createRow(1), createRow(2), createRow(3)],
+    options: {
+      chartType: "pie",
+      valueMode: "exact",
+      title: "",
+      showLegend: true,
+      showLabels: true,
+      xAxisLabel: "",
+      yAxisLabel: "",
+      paletteId: DEFAULT_PALETTE_ID,
+      advancedColorsEnabled: false,
+      showFullColorPicker: false,
+      customColors: {},
+      exportBackground: "white",
+      exportResolution: "medium"
+    }
+  };
+}
+```
+</CodeGroup>
+
+### Legend Display
+
+Both chart types can show an optional legend positioned below the chart:
+
+```javascript
+// From App.jsx:348-373
+legend: {
+  display: options.showLegend,
+  position: "bottom",
+  labels: {
+    usePointStyle: true,
+    boxWidth: 12,
+    padding: 16,
+    color: axisTextColor,
+    generateLabels: (chart) => {
+      const labels = chart.data.labels ?? [];
+      const dataset = chart.data.datasets?.[0];
+      const colors = Array.isArray(dataset?.backgroundColor)
+        ? dataset.backgroundColor
+        : labels.map(() => dataset?.backgroundColor ?? "#64748b");
+
+      return labels.map((label, index) => ({
+        text: String(label),
+        fillStyle: colors[index] ?? colors[0] ?? "#64748b",
+        strokeStyle: colors[index] ?? colors[0] ?? "#64748b",
+        lineWidth: 1,
+        hidden: false,
+        index,
+        datasetIndex: 0
+      }));
+    }
+  }
+}
+```
+
+## Switching Between Chart Types
+
+The chart type is stored in the application state and can be toggled between `"pie"` and `"bar"`:
+
+```javascript
+// From App.jsx:139
+chartType: safeOptions.chartType === "bar" ? "bar" : "pie",
+```
+
+<Info>
+  When switching from pie to bar charts, note that bar charts support negative values while pie charts do not. The validation system will automatically check your data against the requirements for the selected chart type.
+</Info>
+
+## Validation by Chart Type
+
+Each chart type has specific validation rules enforced at App.jsx:230-244:
+
+```javascript
+if (chartType === "pie") {
+  if (validRows.some((row) => row.value < 0)) {
+    blockingIssues.push("Pie charts do not support negative values.");
+  }
+  if (validRows.length > 0 && !validRows.some((row) => row.value > 0)) {
+    blockingIssues.push("Pie charts need at least one value above zero.");
+  }
+
+  if (valueMode === "percentage") {
+    const total = validRows.reduce((sum, row) => sum + row.value, 0);
+    if (validRows.length > 0 && Math.abs(total - 100) > 0.5) {
+      exportIssues.push("For pie charts, percentage totals should be close to 100.");
+    }
+  }
+}
+```

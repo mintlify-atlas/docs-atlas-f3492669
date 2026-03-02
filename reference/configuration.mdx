@@ -1,0 +1,540 @@
+---
+title: Configuration
+description: Complete reference for chart configuration options including appearance, behavior, and export settings.
+---
+
+## Overview
+
+Simple Charts provides extensive configuration options for customizing chart appearance and behavior. All settings are stored in the `options` object within application state.
+
+## Chart Options Object
+
+The complete options structure from `App.jsx:103-117`:
+
+```js
+options: {
+  chartType: "pie",
+  valueMode: "exact",
+  title: "",
+  showLegend: true,
+  showLabels: true,
+  xAxisLabel: "",
+  yAxisLabel: "",
+  paletteId: DEFAULT_PALETTE_ID,
+  advancedColorsEnabled: false,
+  showFullColorPicker: false,
+  customColors: {},
+  exportBackground: "white",
+  exportResolution: "medium"
+}
+```
+
+## Configuration Fields
+
+### chartType
+
+<ParamField path="chartType" type="string" default="pie">
+  The type of chart to render.
+  
+  **Options:**
+  - `"pie"` - Circular pie chart with slices
+  - `"bar"` - Vertical bar chart with columns
+</ParamField>
+
+**Implementation** (`App.jsx:139`):
+```js
+chartType: safeOptions.chartType === "bar" ? "bar" : "pie"
+```
+
+**UI Control**: Tab selector in Chart Setup panel
+
+### valueMode
+
+<ParamField path="valueMode" type="string" default="exact">
+  How values are interpreted and displayed.
+  
+  **Options:**
+  - `"exact"` - Absolute numeric values
+  - `"percentage"` - Percentage values (0-100)
+</ParamField>
+
+**Implementation** (`App.jsx:140`):
+```js
+valueMode: safeOptions.valueMode === "percentage" ? "percentage" : "exact"
+```
+
+**Behavior:**
+- Percentage mode validates values are between 0-100
+- Changes axis labels and value display formatting
+- Affects tooltip and overlay text rendering
+
+**UI Control**: Tab selector in Data section
+
+### title
+
+<ParamField path="title" type="string" default="">
+  Chart title text displayed above the chart.
+  
+  Empty string = no title shown
+</ParamField>
+
+**Implementation** (`App.jsx:141`):
+```js
+title: typeof safeOptions.title === "string" ? safeOptions.title : ""
+```
+
+**Chart.js Configuration** (`App.jsx:375-386`):
+```js
+title: {
+  display: Boolean(options.title.trim()),
+  text: options.title.trim(),
+  color: "#0f172a",
+  font: {
+    size: 17,
+    weight: "600"
+  },
+  padding: {
+    bottom: 14
+  }
+}
+```
+
+### showLegend
+
+<ParamField path="showLegend" type="boolean" default="true">
+  Whether to display the chart legend.
+  
+  Legend shows color swatches and labels for each data point.
+</ParamField>
+
+**Chart.js Configuration** (`App.jsx:348-373`):
+```js
+legend: {
+  display: options.showLegend,
+  position: "bottom",
+  labels: {
+    usePointStyle: true,  // Circular color indicators
+    boxWidth: 12,
+    padding: 16,
+    color: "#334155"
+  }
+}
+```
+
+### showLabels
+
+<ParamField path="showLabels" type="boolean" default="true">
+  Whether to display value labels directly on chart elements.
+  
+  Uses custom `valueOverlayPlugin` to render labels.
+</ParamField>
+
+**Chart.js Configuration** (`App.jsx:411-417`):
+```js
+valueOverlay: {
+  enabled: options.showLabels,
+  color: "#1f2937",
+  font: '600 11px "Inter", "Segoe UI", system-ui, -apple-system, "Noto Serif Bengali", "Nirmala UI", sans-serif',
+  valueMode: options.valueMode,
+  useBengaliNumeralsByIndex: valueLocaleByIndex
+}
+```
+
+**Label Format:**
+- **Pie charts**: Shows percentage of total
+- **Bar charts**: Shows exact value or percentage
+- Automatically localizes to Bengali numerals if input used Bengali digits
+
+### xAxisLabel
+
+<ParamField path="xAxisLabel" type="string" default="">
+  Label for the X-axis (horizontal).
+  
+  **Only applies to bar charts.**
+</ParamField>
+
+**Chart.js Configuration** (`App.jsx:429-437`):
+```js
+x: {
+  title: {
+    display: Boolean(options.xAxisLabel.trim()),
+    text: options.xAxisLabel.trim(),
+    color: "#0f172a",
+    font: { size: 12, weight: "600" }
+  }
+}
+```
+
+### yAxisLabel
+
+<ParamField path="yAxisLabel" type="string" default="">
+  Label for the Y-axis (vertical).
+  
+  **Only applies to bar charts.**
+</ParamField>
+
+**Chart.js Configuration** (`App.jsx:454-465`):
+```js
+y: {
+  title: {
+    display: Boolean(options.yAxisLabel.trim()),
+    text: options.valueMode === "percentage" && options.yAxisLabel.trim() === ""
+      ? "Percent (%)"
+      : options.yAxisLabel.trim(),
+    color: "#0f172a",
+    font: { size: 12, weight: "600" }
+  }
+}
+```
+
+**Special Behavior**: In percentage mode, defaults to "Percent (%)" if empty.
+
+### paletteId
+
+<ParamField path="paletteId" type="string" default="classroom">
+  ID of the color palette to use for chart elements.
+  
+  Must match one of the predefined palette IDs.
+</ParamField>
+
+**Available Palettes** (`palettes.js:1-38`):
+
+| ID | Name | Description | Colors |
+|----|------|-------------|--------|
+| `classroom` | Classroom | Balanced tones for worksheets and slides | 6 colors |
+| `soft-report` | Soft Report | Muted and professional for handouts | 6 colors |
+| `pastel-math` | Pastel Math | Light but readable palette for younger students | 6 colors |
+| `print-safe` | Print Safe | High-contrast colors that remain clear on print | 6 colors |
+| `science-lab` | Science Lab | Cool tones with crisp separation | 6 colors |
+| `editorial` | Editorial | Clean palette for presentations | 6 colors |
+
+**Palette Details:**
+
+```js
+{
+  id: "classroom",
+  name: "Classroom",
+  description: "Balanced tones for worksheets and slides.",
+  colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+}
+```
+
+**Color Assignment**: Colors are assigned to data rows in order, wrapping around if more rows than colors.
+
+### advancedColorsEnabled
+
+<ParamField path="advancedColorsEnabled" type="boolean" default="false">
+  Whether to enable per-row custom color selection.
+  
+  When enabled, `customColors` overrides palette colors for specific rows.
+</ParamField>
+
+**Color Resolution** (`App.jsx:306-315`):
+```js
+const resolvedColors = useMemo(
+  () => chartRows.map((row, index) => {
+    if (options.advancedColorsEnabled && options.customColors[row.id]) {
+      return options.customColors[row.id];  // Custom color
+    }
+    return palette.colors[index % palette.colors.length];  // Palette color
+  }),
+  [chartRows, options.advancedColorsEnabled, options.customColors, palette.colors]
+);
+```
+
+### showFullColorPicker
+
+<ParamField path="showFullColorPicker" type="boolean" default="false">
+  Whether to show the HTML5 color picker input for custom colors.
+  
+  **Only visible when `advancedColorsEnabled` is true.**
+</ParamField>
+
+**UI Implementation** (`ChartControlsPanel.jsx:193-201`):
+```jsx
+{options.showFullColorPicker ? (
+  <Input
+    type="color"
+    value={currentColor}
+    onChange={(event) => onSetCustomColor(row.id, event.target.value)}
+    className="h-10 w-20 p-1"
+  />
+) : null}
+```
+
+When disabled, users can only select from predefined swatches.
+
+### customColors
+
+<ParamField path="customColors" type="object" default="{}">
+  Mapping of row IDs to custom hex color values.
+  
+  **Structure**: `{ [rowId]: "#hexcolor" }`
+</ParamField>
+
+**Example:**
+```js
+customColors: {
+  "f7a8b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c": "#10b981",
+  "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d": "#ef4444"
+}
+```
+
+**Cleanup**: When a row is deleted, its custom color is also removed (`App.jsx:516-518`):
+```js
+const nextCustomColors = { ...current.options.customColors };
+delete nextCustomColors[id];
+```
+
+**Available Swatches** (`palettes.js:42-44`):
+```js
+export const ADVANCED_SWATCHES = [
+  ...new Set(CHART_PALETTES.flatMap((palette) => palette.colors))
+];
+// Results in 24 unique colors from all palettes
+```
+
+### exportBackground
+
+<ParamField path="exportBackground" type="string" default="white">
+  Background color for exported PNG images.
+  
+  **Options:**
+  - `"white"` - Solid white background
+  - `"transparent"` - Transparent background
+</ParamField>
+
+**Export Implementation** (`chartExport.js:128-131`):
+```js
+if (background === "white") {
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+}
+```
+
+### exportResolution
+
+<ParamField path="exportResolution" type="string" default="medium">
+  PNG export resolution quality.
+  
+  Determines the pixel density multiplier for exported images.
+</ParamField>
+
+**Resolution Mapping** (`App.jsx:21-25`):
+
+| Setting | Pixel Ratio | Effective Resolution |
+|---------|-------------|----------------------|
+| `low` | 2x | 2× screen dimensions |
+| `medium` | 4x | 4× screen dimensions |
+| `high` | 8x | 8× screen dimensions |
+
+```js
+const EXPORT_PIXEL_RATIO = {
+  low: 2,
+  medium: 4,
+  high: 8
+};
+```
+
+**File Size Impact:**
+- **Low**: Smallest files, good for web sharing
+- **Medium**: Balanced quality and size (recommended)
+- **High**: Largest files, best for printing
+
+## Chart.js Chart Options
+
+The full Chart.js configuration object is built in `App.jsx:340-486`.
+
+### Common Settings
+
+```js
+{
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 350 },
+  // ...
+}
+```
+
+### Plugins Configuration
+
+#### Legend
+
+```js
+plugins: {
+  legend: {
+    display: options.showLegend,
+    position: "bottom",
+    labels: {
+      usePointStyle: true,
+      boxWidth: 12,
+      padding: 16,
+      color: "#334155"
+    }
+  }
+}
+```
+
+#### Title
+
+```js
+title: {
+  display: Boolean(options.title.trim()),
+  text: options.title.trim(),
+  color: "#0f172a",
+  font: { size: 17, weight: "600" },
+  padding: { bottom: 14 }
+}
+```
+
+#### Tooltip
+
+```js
+tooltip: {
+  backgroundColor: "#0f172a",
+  titleColor: "#ffffff",
+  bodyColor: "#ffffff",
+  padding: 10,
+  cornerRadius: 10,
+  callbacks: {
+    label: (context) => {
+      // Custom formatting with Bengali numeral support
+      const formattedValue = formatChartNumber(numericValue, localizedForPoint);
+      const suffix = options.valueMode === "percentage" ? "%" : "";
+      return `${labelPrefix}${formattedValue}${suffix}`;
+    }
+  }
+}
+```
+
+#### Value Overlay (Custom Plugin)
+
+```js
+valueOverlay: {
+  enabled: options.showLabels,
+  color: "#1f2937",
+  font: '600 11px "Inter", "Segoe UI", system-ui, -apple-system, "Noto Serif Bengali", "Nirmala UI", sans-serif',
+  valueMode: options.valueMode,
+  useBengaliNumeralsByIndex: valueLocaleByIndex
+}
+```
+
+### Scales Configuration (Bar Charts Only)
+
+#### X-Axis
+
+```js
+scales: {
+  x: {
+    grid: { display: false },
+    ticks: { color: "#334155" },
+    title: {
+      display: Boolean(options.xAxisLabel.trim()),
+      text: options.xAxisLabel.trim(),
+      color: "#0f172a",
+      font: { size: 12, weight: "600" }
+    }
+  }
+}
+```
+
+#### Y-Axis
+
+```js
+y: {
+  beginAtZero: !hasNegativeBarValue,  // Dynamic based on data
+  ticks: {
+    color: "#334155",
+    callback: (tickValue) => {
+      const formatted = formatChartNumber(Number(tickValue), useBengaliNumeralsOnAxis);
+      return options.valueMode === "percentage" ? `${formatted}%` : formatted;
+    }
+  },
+  grid: { color: "rgba(148, 163, 184, 0.28)" },
+  title: {
+    display: Boolean(options.yAxisLabel.trim()),
+    text: options.valueMode === "percentage" && options.yAxisLabel.trim() === ""
+      ? "Percent (%)"
+      : options.yAxisLabel.trim(),
+    color: "#0f172a",
+    font: { size: 12, weight: "600" }
+  }
+}
+```
+
+## Dataset Configuration
+
+Dataset styling from `App.jsx:317-333`:
+
+```js
+chartData: {
+  labels: chartRows.map((row) => row.label),
+  datasets: [{
+    label: options.valueMode === "percentage" ? "Percentage" : "Value",
+    data: chartRows.map((row) => row.value),
+    useBengaliNumeralsByIndex: valueLocaleByIndex,
+    backgroundColor: resolvedColors,
+    borderColor: options.chartType === "pie" ? "#ffffff" : resolvedColors,
+    borderWidth: options.chartType === "pie" ? 2 : 1,
+    borderRadius: options.chartType === "bar" ? 10 : 0
+  }]
+}
+```
+
+### Chart Type Differences
+
+| Property | Pie Chart | Bar Chart |
+|----------|-----------|------------|
+| `borderColor` | White (`#ffffff`) | Matches `backgroundColor` |
+| `borderWidth` | `2` | `1` |
+| `borderRadius` | `0` | `10` (rounded corners) |
+
+## Color Constants
+
+Hard-coded color values used throughout (`App.jsx:336-338`):
+
+```js
+const axisTextColor = "#334155";   // Slate-700
+const titleColor = "#0f172a";      // Slate-900
+const gridColor = "rgba(148, 163, 184, 0.28)";  // Slate-400 with opacity
+```
+
+These colors are fixed and not customizable by users (designed for consistency and readability).
+
+## Updating Configuration
+
+Configuration is updated via the `updateOptions` helper (`App.jsx:488-496`):
+
+```js
+function updateOptions(patch) {
+  setAppState((current) => ({
+    ...current,
+    options: {
+      ...current.options,
+      ...patch
+    }
+  }));
+}
+```
+
+**Usage Examples:**
+
+```js
+// Change chart type
+updateOptions({ chartType: "bar" });
+
+// Update title
+updateOptions({ title: "Student Survey Results" });
+
+// Change multiple settings
+updateOptions({ 
+  showLegend: false, 
+  showLabels: true,
+  exportResolution: "high"
+});
+```
+
+All updates trigger:
+1. State change in React
+2. Auto-save to localStorage (200ms debounce)
+3. Chart re-render with new configuration

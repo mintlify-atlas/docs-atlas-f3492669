@@ -1,0 +1,303 @@
+---
+title: Export Options
+description: Learn how to export charts as high-resolution PNG images with customizable settings
+---
+
+Simple Charts allows you to export your charts as PNG images with configurable resolution and background options. The export feature is implemented in the ExportActions component and uses the Chart.js canvas for high-quality output.
+
+## Export Interface
+
+The export controls are provided by the ExportActions component:
+
+```javascript
+// From ExportActions.jsx:7-15
+export default function ExportActions({
+  exportBackground,
+  onBackgroundChange,
+  exportResolution,
+  onResolutionChange,
+  onExport,
+  isDisabled,
+  issues
+})
+```
+
+## Background Options
+
+Choose between white or transparent backgrounds for your exported charts.
+
+<Tabs>
+  <Tab title="White Background">
+    Exports the chart with a solid white background.
+
+    **Best for:**
+    - Printing on paper
+    - Embedding in documents
+    - Situations where background is unknown
+    - Maximum compatibility
+
+    ```javascript
+    // From ExportActions.jsx:24-30
+    <Tabs value={exportBackground} onValueChange={onBackgroundChange}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="white">White</TabsTrigger>
+        <TabsTrigger value="transparent">Transparent</TabsTrigger>
+      </TabsList>
+    </Tabs>
+    ```
+  </Tab>
+
+  <Tab title="Transparent Background">
+    Exports the chart with a transparent background (alpha channel).
+
+    **Best for:**
+    - Overlaying on colored backgrounds
+    - Presentations with custom themes
+    - Web graphics
+    - Dark mode compatibility
+
+    <Note>
+      PNG with transparency may appear differently depending on the application viewing it. Some viewers show a checkerboard pattern, while others show white or black.
+    </Note>
+  </Tab>
+</Tabs>
+
+### Background Configuration
+
+The background setting is stored in application state:
+
+```javascript
+// From App.jsx:166
+exportBackground: safeOptions.exportBackground === "transparent" ? "transparent" : "white",
+```
+
+And applied during export:
+
+```javascript
+// From App.jsx:568-584
+function handleExportPng() {
+  if (!canExport) {
+    return;
+  }
+
+  void downloadChartAsPng(chartRef.current, {
+    background: options.exportBackground,
+    pixelRatio: EXPORT_PIXEL_RATIO[options.exportResolution] ?? EXPORT_PIXEL_RATIO.medium,
+    chartStyleOverrides: {
+      titleColor: "#0f172a",
+      axisTextColor: "#334155",
+      gridColor: "rgba(148, 163, 184, 0.28)",
+      valueOverlayColor: "#1f2937",
+      tooltipBackgroundColor: "#0f172a"
+    }
+  }).catch(() => {});
+}
+```
+
+## Resolution Settings
+
+Simple Charts offers three resolution presets, each with a different pixel ratio multiplier:
+
+<Tabs>
+  <Tab title="Low">
+    **Pixel Ratio:** 2x
+
+    Produces a smaller file size suitable for:
+    - Quick previews
+    - Web-only use at standard DPI
+    - Situations where file size matters
+    - Email attachments
+
+    ```javascript
+    // From App.jsx:21-25
+    const EXPORT_PIXEL_RATIO = {
+      low: 2,
+      // ...
+    };
+    ```
+  </Tab>
+
+  <Tab title="Medium">
+    **Pixel Ratio:** 4x (default)
+
+    Balanced quality and file size for:
+    - General classroom use
+    - Digital presentations
+    - Most printing needs
+    - LMS uploads
+
+    ```javascript
+    const EXPORT_PIXEL_RATIO = {
+      low: 2,
+      medium: 4,
+      high: 8
+    };
+    ```
+
+    <Info>
+      This is the default resolution setting and works well for most use cases.
+    </Info>
+  </Tab>
+
+  <Tab title="High">
+    **Pixel Ratio:** 8x
+
+    Maximum quality for:
+    - Professional printing
+    - Large format displays
+    - Publications
+    - When quality is paramount
+
+    <Note>
+      High resolution exports will have significantly larger file sizes. Use this only when you need the absolute best quality.
+    </Note>
+  </Tab>
+</Tabs>
+
+### Resolution Controls
+
+Resolution is selected via a tabbed interface:
+
+```javascript
+// From ExportActions.jsx:33-42
+<div className="space-y-2">
+  <Label>Resolution</Label>
+  <Tabs value={exportResolution} onValueChange={onResolutionChange}>
+    <TabsList className="grid w-full grid-cols-3">
+      <TabsTrigger value="low">Low</TabsTrigger>
+      <TabsTrigger value="medium">Medium</TabsTrigger>
+      <TabsTrigger value="high">High</TabsTrigger>
+    </TabsList>
+  </Tabs>
+</div>
+```
+
+## Export Button
+
+The main export button triggers the download:
+
+```javascript
+// From ExportActions.jsx:44-47
+<Button type="button" className="w-full" disabled={isDisabled} onClick={onExport}>
+  <Download className="mr-2 h-4 w-4" />
+  Export PNG
+</Button>
+```
+
+### Disabled State
+
+The export button is disabled when there are validation issues with the chart data. This prevents exporting incomplete or invalid charts.
+
+```javascript
+// From App.jsx:304
+const canExport = validation.exportIssues.length === 0 && canRender;
+```
+
+## Validation Messages
+
+If there are issues preventing export, they are displayed below the export button:
+
+```javascript
+// From ExportActions.jsx:49-51
+{issues.length ? (
+  <p className="animate-error-in text-sm text-muted-foreground">{issues[0]}</p>
+) : null}
+```
+
+Common validation issues include:
+- Incomplete data rows
+- Missing required values
+- Invalid number formats
+- Percentage totals that don't sum to 100 (for pie charts)
+- No positive values (for pie charts)
+
+## Export Process
+
+The export functionality:
+
+1. **Validates data** - Ensures chart is ready for export
+2. **Applies style overrides** - Sets consistent colors for exported image
+3. **Renders at high resolution** - Uses the selected pixel ratio
+4. **Applies background** - White or transparent based on settings
+5. **Triggers download** - Saves the PNG to the user's device
+
+<CodeGroup>
+```javascript Export Configuration
+// From App.jsx:574-583
+void downloadChartAsPng(chartRef.current, {
+  background: options.exportBackground,
+  pixelRatio: EXPORT_PIXEL_RATIO[options.exportResolution] ?? EXPORT_PIXEL_RATIO.medium,
+  chartStyleOverrides: {
+    titleColor: "#0f172a",
+    axisTextColor: "#334155",
+    gridColor: "rgba(148, 163, 184, 0.28)",
+    valueOverlayColor: "#1f2937",
+    tooltipBackgroundColor: "#0f172a"
+  }
+}).catch(() => {});
+```
+
+```javascript Default Resolution
+// From App.jsx:116
+exportResolution: "medium"
+```
+
+```javascript Default Background
+// From App.jsx:115
+exportBackground: "white"
+```
+</CodeGroup>
+
+## Style Overrides
+
+During export, specific color values are applied to ensure consistency across different themes and display modes:
+
+- **Title Color:** `#0f172a` (dark slate)
+- **Axis Text Color:** `#334155` (slate)
+- **Grid Color:** `rgba(148, 163, 184, 0.28)` (translucent slate)
+- **Value Overlay Color:** `#1f2937` (gray)
+- **Tooltip Background:** `#0f172a` (dark slate)
+
+These overrides ensure that exported charts look professional regardless of the application's current theme settings.
+
+## Card Layout
+
+The export controls are presented in a card with sticky positioning on larger screens:
+
+```javascript
+// From ExportActions.jsx:17-22
+<Card className="lg:sticky lg:top-4">
+  <CardHeader>
+    <CardTitle>Export</CardTitle>
+    <CardDescription>Download chart as a high-resolution PNG.</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+```
+
+This keeps the export controls visible while scrolling on desktop displays.
+
+## Best Practices
+
+### For Digital Use
+- Use **Medium** or **Low** resolution
+- Choose **Transparent** background for flexibility
+- Smaller file sizes load faster in presentations
+
+### For Printing
+- Use **High** or **Medium** resolution
+- Choose **White** background for paper
+- Consider the "Print Safe" color palette
+
+### For Web Publishing
+- Use **Medium** resolution
+- **Transparent** background for responsive designs
+- Optimize file size vs. quality for your audience
+
+### For Professional Documents
+- Use **High** resolution
+- **White** background unless specified otherwise
+- Ensure all data is validated before export
+
+<Info>
+  The pixel ratio determines how many device pixels are used for each CSS pixel. Higher ratios produce sharper images at the cost of larger file sizes.
+</Info>

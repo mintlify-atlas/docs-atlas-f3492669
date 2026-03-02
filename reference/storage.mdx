@@ -1,0 +1,350 @@
+---
+title: Storage
+description: How Simple Charts persists user data with localStorage auto-save, storage key format, and state sanitization.
+---
+
+## Overview
+
+Simple Charts automatically saves all chart data and settings to browser localStorage. This enables users to refresh the page or return later without losing their work.
+
+## usePersistedState Hook
+
+The core persistence mechanism is the `usePersistedState` custom hook (`usePersistedState.js:7-45`).
+
+### Hook Signature
+
+```js
+function usePersistedState(storageKey, initialState, sanitizeState)
+```
+
+<ParamField path="storageKey" type="string" required>
+  The localStorage key to use for persistence
+</ParamField>
+
+<ParamField path="initialState" type="object | function" required>
+  Default state value or factory function that returns default state
+</ParamField>
+
+<ParamField path="sanitizeState" type="function">
+  Optional function to validate/sanitize loaded state before use
+  
+  **Signature**: `(rawState, defaultState) => sanitizedState`
+</ParamField>
+
+### Return Value
+
+Returns a tuple identical to React's `useState`:
+
+```js
+const [state, setState] = usePersistedState(key, initial, sanitize);
+```
+
+## Usage Example
+
+From `App.jsx:259`:
+
+```jsx
+const STORAGE_KEY = "teacher-chart-maker:v1";
+
+function ChartBuilderPage() {
+  const [appState, setAppState] = usePersistedState(
+    STORAGE_KEY,
+    buildDefaultState,  // Factory function
+    sanitizeState       // Sanitizer function
+  );
+  
+  const { rows, options } = appState;
+  // ...
+}
+```
+
+## Storage Key Format
+
+The app uses a versioned storage key:
+
+```js
+const STORAGE_KEY = "teacher-chart-maker:v1";
+```
+
+### Key Structure
+
+- **Prefix**: `teacher-chart-maker` (original product name)
+- **Version**: `v1` (allows future schema migrations)
+
+### Additional Storage Keys
+
+The app also stores theme preference separately:
+
+```js
+const THEME_STORAGE_KEY = "simple-charts:theme"; // "light" or "dark"
+```
+
+## State Initialization
+
+On first load or when localStorage is empty, the hook initializes with default state.
+
+### Default State Factory
+
+`buildDefaultState()` from `App.jsx:100-119`:
+
+```js
+function buildDefaultState() {
+  return {
+    rows: [
+      createRow(1),  // { id, label: "Option 1", value: "5" }
+      createRow(2),  // { id, label: "Option 2", value: "10" }
+      createRow(3)   // { id, label: "Option 3", value: "15" }
+    ],
+    options: {
+      chartType: "pie",
+      valueMode: "exact",
+      title: "",
+      showLegend: true,
+      showLabels: true,
+      xAxisLabel: "",
+      yAxisLabel: "",
+      paletteId: DEFAULT_PALETTE_ID,  // "classroom"
+      advancedColorsEnabled: false,
+      showFullColorPicker: false,
+      customColors: {},
+      exportBackground: "white",
+      exportResolution: "medium"
+    }
+  };
+}
+```
+
+### Row ID Generation
+
+`createId()` generates unique row IDs (`App.jsx:85-90`):
+
+```js
+function createId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();  // Modern browsers
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+```
+
+## State Sanitization
+
+When loading from localStorage, `sanitizeState()` ensures the data is valid and safe to use.
+
+### Sanitization Function
+
+`sanitizeState(rawState, defaultState)` from `App.jsx:121-175`:
+
+```js
+function sanitizeState(rawState, defaultState) {
+  // Validate rows array
+  const safeRows = Array.isArray(rawState?.rows)
+    ? rawState.rows
+        .filter((row) => row && typeof row === "object")
+        .map((row, index) => ({
+          id: typeof row.id === "string" && row.id ? row.id : createId(),
+          label: typeof row.label === "string" ? row.label : `Option ${index + 1}`,
+          value: (typeof row.value === "string" || typeof row.value === "number")
+            ? String(row.value)
+            : ""
+        }))
+    : defaultState.rows;
+
+  // Validate options object
+  const safeOptions = rawState?.options ?? {};
+  
+  return {
+    rows: safeRows.length ? safeRows : defaultState.rows,
+    options: {
+      chartType: safeOptions.chartType === "bar" ? "bar" : "pie",
+      valueMode: safeOptions.valueMode === "percentage" ? "percentage" : "exact",
+      title: typeof safeOptions.title === "string" ? safeOptions.title : "",
+      showLegend: typeof safeOptions.showLegend === "boolean"
+        ? safeOptions.showLegend
+        : defaultState.options.showLegend,
+      // ... (validates all other fields)
+    }
+  };
+}
+```
+
+### Sanitization Rules
+
+#### Row Validation
+
+- Must be an array of objects
+- Each row must have `id`, `label`, `value`
+- Invalid IDs regenerated with `createId()`
+- Non-string labels replaced with default
+- Values coerced to strings
+- Empty arrays replaced with default rows
+
+#### Options Validation
+
+| Field | Validation | Default Fallback |
+|-------|------------|------------------|
+| `chartType` | Must be `"pie"` or `"bar"` | `"pie"` |
+| `valueMode` | Must be `"exact"` or `"percentage"` | `"exact"` |
+| `title` | Must be string | `""` |
+| `showLegend` | Must be boolean | `true` |
+| `showLabels` | Must be boolean | `true` |
+| `xAxisLabel` | Must be string | `""` |
+| `yAxisLabel` | Must be string | `""` |
+| `paletteId` | Must be string | `DEFAULT_PALETTE_ID` |
+| `advancedColorsEnabled` | Must be boolean | `false` |
+| `showFullColorPicker` | Must be boolean | `false` |
+| `customColors` | Must be object | `{}` |
+| `exportBackground` | Must be `"white"` or `"transparent"` | `"white"` |
+| `exportResolution` | Must be `"low"`, `"medium"`, or `"high"` | `"medium"` |
+
+## Auto-Save Mechanism
+
+### Debounced Write
+
+The hook automatically saves state changes to localStorage with a 200ms debounce (`usePersistedState.js:28-42`):
+
+```js
+useEffect(() => {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const saveTimer = window.setTimeout(() => {
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      // Ignore storage quota or availability errors
+    }
+  }, 200);
+
+  return () => window.clearTimeout(saveTimer);
+}, [storageKey, state]);
+```
+
+### Why Debouncing?
+
+- **Performance**: Prevents excessive localStorage writes during rapid typing
+- **User Experience**: Feels instant but reduces I/O operations
+- **Battery Saving**: Reduces write operations on mobile devices
+
+### Error Handling
+
+LocalStorage operations are wrapped in try-catch:
+
+- **Write errors**: Silently ignored (quota exceeded, private browsing)
+- **Read errors**: Falls back to default state
+- **Parse errors**: Falls back to default state
+
+```js
+try {
+  const rawState = window.localStorage.getItem(storageKey);
+  if (!rawState) {
+    return defaultState;
+  }
+  const parsedState = JSON.parse(rawState);
+  return sanitizeState ? sanitizeState(parsedState, defaultState) : parsedState;
+} catch {
+  return defaultState;
+}
+```
+
+## Storage Format
+
+### Stored JSON Structure
+
+```json
+{
+  "rows": [
+    {
+      "id": "f7a8b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+      "label": "Strongly Agree",
+      "value": "15"
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "label": "Agree",
+      "value": "25"
+    }
+  ],
+  "options": {
+    "chartType": "bar",
+    "valueMode": "exact",
+    "title": "Student Satisfaction Survey",
+    "showLegend": true,
+    "showLabels": true,
+    "xAxisLabel": "Response",
+    "yAxisLabel": "Number of Students",
+    "paletteId": "classroom",
+    "advancedColorsEnabled": true,
+    "showFullColorPicker": false,
+    "customColors": {
+      "f7a8b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c": "#10b981"
+    },
+    "exportBackground": "white",
+    "exportResolution": "high"
+  }
+}
+```
+
+## Server-Side Rendering Compatibility
+
+The hook gracefully handles SSR environments:
+
+```js
+const [state, setState] = useState(() => {
+  if (typeof window === "undefined") {
+    return defaultState;  // No localStorage on server
+  }
+  // ... load from localStorage
+});
+
+useEffect(() => {
+  if (typeof window === "undefined") {
+    return undefined;  // No save on server
+  }
+  // ... save to localStorage
+});
+```
+
+## Storage Limitations
+
+### Browser Limits
+
+- **Quota**: Typically 5-10MB per origin
+- **Private Mode**: May not persist across sessions
+- **Incognito**: Often disabled entirely
+
+### App Behavior
+
+If localStorage is unavailable:
+
+- App still functions normally
+- State resets on page refresh
+- No error messages shown to user
+
+## Clearing Stored Data
+
+Users can clear their data by:
+
+1. Clicking **Clear** in the Data section (resets to default)
+2. Clearing browser data (removes from localStorage)
+3. Using browser DevTools: `localStorage.removeItem('teacher-chart-maker:v1')`
+
+## Migration Strategy
+
+The versioned storage key (`v1`) allows for future schema changes:
+
+```js
+// Future version example
+const STORAGE_KEY_V2 = "teacher-chart-maker:v2";
+
+function migrateFromV1() {
+  const v1Data = localStorage.getItem("teacher-chart-maker:v1");
+  if (v1Data) {
+    const migrated = transformV1ToV2(JSON.parse(v1Data));
+    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(migrated));
+  }
+}
+```
+
+Currently no migration is needed as only `v1` exists.

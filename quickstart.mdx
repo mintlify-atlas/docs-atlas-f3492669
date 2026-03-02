@@ -1,80 +1,172 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quickstart'
+description: 'Create your first chart in under a minute with Simple Charts'
+keywords: ['quickstart', 'tutorial', 'getting started', 'first chart', 'guide']
+icon: 'rocket'
 ---
 
-## Get started in three steps
+Get started with Simple Charts and create beautiful, classroom-ready charts in seconds. No account required, no installation needed.
 
-Get your documentation site running locally and make your first customization.
+## Launch the app
 
-### Step 1: Set up your local environment
+Visit [charts.abmcodes.xyz](https://charts.abmcodes.xyz) to start creating charts immediately. The app runs entirely in your browser and auto-saves your work locally.
+
+<Tip>Simple Charts works on any device, including tablets and smartphones. For app-like experience on Android, install it as a PWA from your browser menu.</Tip>
+
+## Your first chart
+
+<Steps>
+  <Step title="Enter your data">
+    In the **Data** panel on the left, you'll see three default rows. Replace them with your actual data:
+    
+    - **Label**: The name of each option (e.g., "Pizza", "Tacos", "Burgers")
+    - **Value**: The count or number for each option
+    
+    Click **Add Row** to add more options, or click the trash icon to remove rows you don't need.
+    
+    <Note>Empty rows are automatically ignored - you don't need to delete them manually.</Note>
+  </Step>
+
+  <Step title="Choose value format">
+    Toggle between **Numbers** and **Percentages** based on your data:
+    
+    - **Numbers**: For raw counts (e.g., "15 students chose pizza")
+    - **Percentages**: For percentage data (e.g., "45% chose pizza")
+    
+    <Warning>When using percentages with pie charts, values should add up to approximately 100 to avoid validation warnings.</Warning>
+  </Step>
+
+  <Step title="Select chart type">
+    In the **Chart Setup** panel, choose between:
+    
+    - **Pie**: Perfect for showing proportions and parts of a whole
+    - **Bar**: Ideal for comparing values across categories
+    
+    <Note>Pie charts cannot display negative values. If you need to show negative data, use a bar chart.</Note>
+  </Step>
+
+  <Step title="Customize your chart">
+    Make your chart presentation-ready:
+    
+    - **Title**: Add a descriptive title like "Favorite Lunch Options"
+    - **Legend**: Toggle on/off to show/hide the color legend
+    - **Value labels**: Display values directly on chart segments or bars
+    - **Color theme**: Choose from 6 curated palettes designed for classroom use:
+      - **Classroom** - Balanced tones for worksheets and slides
+      - **Soft Report** - Muted and professional for handouts
+      - **Pastel Math** - Light palette for younger students
+      - **Print Safe** - High-contrast colors for printing
+      - **Science Lab** - Cool tones with crisp separation
+      - **Editorial** - Clean palette for presentations
+    
+    <Tip>For bar charts, you can add custom X and Y axis labels to provide additional context.</Tip>
+  </Step>
+
+  <Step title="Export your chart">
+    Once your chart looks perfect, export it as a high-resolution PNG:
+    
+    1. Choose **Background**: White (for documents) or Transparent (for slides)
+    2. Select **Resolution**:
+       - **Low** - 2x pixel ratio (fastest download)
+       - **Medium** - 4x pixel ratio (recommended balance)
+       - **High** - 8x pixel ratio (maximum quality for printing)
+    3. Click **Export PNG**
+    
+    The chart downloads instantly as `chart-YYYYMMDD-HHMM.png` to your device.
+  </Step>
+</Steps>
+
+## Data validation
+
+Simple Charts validates your data in real-time and displays helpful error messages:
+
+### Field validation
+
+Each row is checked for completeness:
+- **"Label required"** - Add text to the label field
+- **"Value required"** - Add a number to the value field  
+- **"Use a valid number"** - Enter numeric data only
+- **"Use a percentage between 0 and 100"** - Percentages must be 0-100
+
+<Note>The validation logic supports international number formats, including Bengali numerals (০-৯), Arabic decimal separators (٫), and various comma/minus symbols.</Note>
+
+### Chart validation
+
+Additional rules apply based on chart type:
+- **"Add at least one complete label and value pair"** - Charts need data to render
+- **"Pie charts do not support negative values"** - Use bar charts for negative data
+- **"Pie charts need at least one value above zero"** - All zeros cannot be visualized
+- **"For pie charts, percentage totals should be close to 100"** - Validation warning for percentages
+
+These validation messages appear in the Data table and Export panel to help you fix issues before exporting.
+
+## Power user tips
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+  <Accordion title="Persist your data automatically">
+    Simple Charts auto-saves your last chart to browser local storage. Your data persists across sessions, so you can close the tab and return later without losing work.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+    The storage key is `teacher-chart-maker:v1` and includes both your data rows and all chart options.
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+
+  <Accordion title="Use custom colors per item">
+    Need fine-grained color control? Open the **Advanced Colors** accordion in Chart Setup:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+    1. Enable **"Enable custom item colors"**
+    2. Click **"Show full color picker"** for unlimited color selection
+    3. Choose colors for each data row individually
+    4. Click **Reset custom colors** to return to the theme palette
+    
+    You can select from 16 curated color swatches or use the full color picker for exact hex values.
+  </Accordion>
+
+  <Accordion title="Support for Bengali numerals">
+    Simple Charts automatically detects Bengali numerals (০-৯) in your input and formats them correctly in charts. If all values use Bengali numerals, axis labels will render in Bengali too.
+    
+    The app normalizes various international number formats:
+    - Bengali digits: ০-৯ → 0-9
+    - Arabic decimal: ٫ → .
+    - Various commas: ٬ , → removed
+    - Dash variants: − – — → -
+  </Accordion>
+
+  <Accordion title="Quick keyboard workflow">
+    Speed up data entry with these shortcuts:
+    
+    - **Tab**: Move to next field
+    - **Shift+Tab**: Move to previous field
+    - **Enter in last row**: Automatically adds a new row
+    - **Add Row button**: Creates new empty row
+    - **Clear button**: Resets all data to single empty row
+  </Accordion>
+
+  <Accordion title="Export for different contexts">
+    Choose your export settings based on where you'll use the chart:
+    
+    | Context | Background | Resolution |
+    |---------|------------|------------|
+    | Google Slides | Transparent | Medium |
+    | PowerPoint | White | Medium |
+    | Printed worksheets | White | High |
+    | Social media posts | White | Medium |
+    | Research papers | White | High |
+    | Web articles | Transparent | Low |
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+## What's next?
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+<Columns cols={2}>
+  <Card title="Chart types" icon="chart-pie" href="/features/chart-types">
+    Learn the differences between pie and bar charts and when to use each type
+  </Card>
+  <Card title="Color palettes" icon="palette" href="/features/color-themes">
+    Explore all 6 built-in color themes and custom color options
+  </Card>
+  <Card title="Export options" icon="download" href="/features/export-options">
+    Master high-resolution exports with background and resolution controls
+  </Card>
+  <Card title="Deployment" icon="cloud-arrow-up" href="/guides/deployment">
+    Deploy your own instance on Cloudflare Pages
+  </Card>
+</Columns>

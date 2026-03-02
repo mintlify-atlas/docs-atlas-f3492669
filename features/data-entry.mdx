@@ -1,0 +1,305 @@
+---
+title: Data Entry
+description: Learn how to enter and manage chart data with the DataTableEditor component
+---
+
+The DataTableEditor component provides an intuitive interface for entering labels and values for your charts. It supports two value modes, real-time validation, and flexible row management.
+
+## Component Overview
+
+The DataTableEditor is implemented in `src/components/DataTableEditor.jsx` and handles all data input for chart generation.
+
+```javascript
+// From DataTableEditor.jsx:9-19
+export default function DataTableEditor({
+  rows,
+  fieldErrors,
+  valueMode,
+  recentlyAddedRowId,
+  onChangeValueMode,
+  onUpdateRow,
+  onAddRow,
+  onRemoveRow,
+  onClearRows
+})
+```
+
+## Value Modes
+
+Simple Charts supports two different value input modes to accommodate different data types:
+
+<Tabs>
+  <Tab title="Numbers Mode">
+    Use exact numeric values for your data points. This mode is ideal for:
+    - Counting responses (e.g., 15 students chose option A)
+    - Displaying raw scores
+    - Any data where absolute values matter
+
+    ```javascript
+    // From DataTableEditor.jsx:42-46
+    <Tabs value={valueMode} onValueChange={(value) => onChangeValueMode(value)}>
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="exact">Numbers</TabsTrigger>
+        <TabsTrigger value="percentage">Percentages</TabsTrigger>
+      </TabsList>
+    </Tabs>
+    ```
+
+    Input placeholder: `"0"`
+  </Tab>
+
+  <Tab title="Percentages Mode">
+    Enter values as percentages between 0 and 100. This mode is ideal for:
+    - Pre-calculated percentage data
+    - Survey results already in percentage form
+    - Data where relative proportions are key
+
+    Input placeholder: `"0-100"`
+
+    <Note>
+      For pie charts in percentage mode, the sum of all values should be close to 100%. The validation system will warn if totals deviate by more than 0.5%.
+    </Note>
+  </Tab>
+</Tabs>
+
+### Value Mode Implementation
+
+```javascript
+// From DataTableEditor.jsx:55-57
+<th className="pb-2 font-medium">
+  {valueMode === "percentage" ? "Percent (%)" : "Value"}
+</th>
+```
+
+The column header dynamically updates based on the selected mode.
+
+## Row Management
+
+### Adding Rows
+
+Click the "Add Row" button to create a new data entry row:
+
+```javascript
+// From DataTableEditor.jsx:32-35
+<Button type="button" size="sm" onClick={onAddRow}>
+  <Plus className="mr-1 h-4 w-4" />
+  Add Row
+</Button>
+```
+
+Newly added rows are highlighted with a subtle animation:
+
+```javascript
+// From DataTableEditor.jsx:67-70
+className={cn(
+  "border-b transition-colors last:border-b-0",
+  recentlyAddedRowId === row.id ? "animate-row-in bg-primary/5" : ""
+)}
+```
+
+### Removing Rows
+
+Each row has a remove button (trash icon) on the right side:
+
+```javascript
+// From DataTableEditor.jsx:106-115
+<Button
+  type="button"
+  variant="ghost"
+  size="icon"
+  onClick={() => onRemoveRow(row.id)}
+  disabled={rows.length <= 1}
+  aria-label={`Remove row ${index + 1}`}
+>
+  <Trash2 className="h-4 w-4" />
+</Button>
+```
+
+<Info>
+  You cannot remove the last remaining row. At least one row must always be present in the table.
+</Info>
+
+### Clearing All Data
+
+The "Clear" button removes all data and resets to a single empty row:
+
+```javascript
+// From DataTableEditor.jsx:29-31
+<Button type="button" variant="outline" size="sm" onClick={onClearRows}>
+  Clear
+</Button>
+```
+
+## Input Fields
+
+### Label Field
+
+Each row has a label field for the category name:
+
+```javascript
+// From DataTableEditor.jsx:76-83
+<Input
+  id={`label-${row.id}`}
+  type="text"
+  value={row.label}
+  onChange={(event) => onUpdateRow(row.id, "label", event.target.value)}
+  placeholder={`Option ${index + 1}`}
+  className={rowErrors.label ? "border-red-500 focus-visible:ring-red-400" : ""}
+/>
+```
+
+### Value Field
+
+The value field accepts numeric input with decimal support:
+
+```javascript
+// From DataTableEditor.jsx:92-100
+<Input
+  id={`value-${row.id}`}
+  type="text"
+  inputMode="decimal"
+  value={row.value}
+  onChange={(event) => onUpdateRow(row.id, "value", event.target.value)}
+  placeholder={valueMode === "percentage" ? "0-100" : "0"}
+  className={rowErrors.value ? "border-red-500 focus-visible:ring-red-400" : ""}
+/>
+```
+
+<Note>
+  The `inputMode="decimal"` attribute optimizes mobile keyboards for numeric entry, showing a decimal keypad on touch devices.
+</Note>
+
+## Field Validation
+
+Simple Charts validates data in real-time and displays inline error messages.
+
+### Error Display
+
+Validation errors appear below the corresponding input field:
+
+```javascript
+// From DataTableEditor.jsx:84-86
+{rowErrors.label ? (
+  <p className="animate-error-in mt-1 text-xs text-red-600">{rowErrors.label}</p>
+) : null}
+```
+
+```javascript
+// From DataTableEditor.jsx:101-103
+{rowErrors.value ? (
+  <p className="animate-error-in mt-1 text-xs text-red-600">{rowErrors.value}</p>
+) : null}
+```
+
+### Validation Rules
+
+From App.jsx:177-217, the validation system checks:
+
+<CodeGroup>
+```javascript Label Validation
+// From App.jsx:192-194
+if (!label) {
+  fieldErrors[row.id].label = "Label required";
+}
+```
+
+```javascript Value Validation
+// From App.jsx:196-205
+if (valueText.length === 0) {
+  fieldErrors[row.id].value = "Value required";
+} else {
+  const value = parseLocalizedNumber(valueText);
+  if (!Number.isFinite(value)) {
+    fieldErrors[row.id].value = "Use a valid number";
+  } else if (valueMode === "percentage" && (value < 0 || value > 100)) {
+    fieldErrors[row.id].value = "Use a percentage between 0 and 100";
+  }
+}
+```
+</CodeGroup>
+
+### Empty Row Handling
+
+Rows with no content in either field are silently ignored:
+
+```javascript
+// From App.jsx:181-188
+const label = row.label.trim();
+const valueText = String(row.value).trim();
+const hasAnyContent = label.length > 0 || valueText.length > 0;
+
+if (!hasAnyContent) {
+  return;
+}
+```
+
+## Row State Management
+
+Each row is identified by a unique ID and contains label and value data:
+
+```javascript
+// From App.jsx:92-98
+function createRow(index = 1) {
+  return {
+    id: createId(),
+    label: `Option ${index}`,
+    value: String(index * 5)
+  };
+}
+```
+
+### Updating Row Data
+
+```javascript
+// From App.jsx:498-503
+function handleUpdateRow(id, key, value) {
+  setAppState((current) => ({
+    ...current,
+    rows: current.rows.map((row) => (row.id === id ? { ...row, [key]: value } : row))
+  }));
+}
+```
+
+## Accessibility Features
+
+The DataTableEditor includes several accessibility enhancements:
+
+- **Screen reader labels** for each input field
+- **ARIA labels** for remove buttons
+- **Semantic table structure** with proper headers
+- **Keyboard navigation** support through standard HTML inputs
+
+```javascript
+// From DataTableEditor.jsx:73-75
+<Label className="sr-only" htmlFor={`label-${row.id}`}>
+  Label {index + 1}
+</Label>
+```
+
+## Visual Feedback
+
+### Row Animations
+
+Newly added rows fade in with a background highlight:
+
+```css
+/* Applied via className */
+animate-row-in bg-primary/5
+```
+
+### Error Animations
+
+Validation errors appear with a smooth animation:
+
+```css
+/* Applied via className */
+animate-error-in
+```
+
+### Border Highlighting
+
+Invalid fields show a red border:
+
+```javascript
+className={rowErrors.label ? "border-red-500 focus-visible:ring-red-400" : ""}
+```

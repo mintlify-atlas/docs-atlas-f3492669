@@ -1,0 +1,302 @@
+---
+title: Color Themes
+description: Explore the six built-in color palettes designed for educational charts
+---
+
+Simple Charts includes six carefully designed color palettes optimized for classroom use, printability, and accessibility. Each palette provides six distinct colors that work well together.
+
+## Available Palettes
+
+All palettes are defined in `src/constants/palettes.js`:
+
+```javascript
+// From palettes.js:1-38
+export const CHART_PALETTES = [
+  // ... palette definitions
+];
+```
+
+<Tabs>
+  <Tab title="Classroom">
+    Balanced tones for worksheets and slides.
+
+    **Palette ID:** `classroom` (default)
+
+    ### Colors
+    <CodeGroup>
+    ```javascript Definition
+    {
+      id: "classroom",
+      name: "Classroom",
+      description: "Balanced tones for worksheets and slides.",
+      colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+    }
+    ```
+
+    ```css Color Swatches
+    #3b82f6  /* Blue */
+    #10b981  /* Green */
+    #f59e0b  /* Amber */
+    #ef4444  /* Red */
+    #8b5cf6  /* Violet */
+    #06b6d4  /* Cyan */
+    ```
+    </CodeGroup>
+
+    <Note>
+      This is the default palette used when creating new charts. It provides excellent balance between vibrancy and readability.
+    </Note>
+  </Tab>
+
+  <Tab title="Soft Report">
+    Muted and professional for handouts.
+
+    **Palette ID:** `soft-report`
+
+    ### Colors
+    <CodeGroup>
+    ```javascript Definition
+    {
+      id: "soft-report",
+      name: "Soft Report",
+      description: "Muted and professional for handouts.",
+      colors: ["#4f46e5", "#0ea5e9", "#22c55e", "#eab308", "#f97316", "#e11d48"]
+    }
+    ```
+
+    ```css Color Swatches
+    #4f46e5  /* Indigo */
+    #0ea5e9  /* Sky Blue */
+    #22c55e  /* Green */
+    #eab308  /* Yellow */
+    #f97316  /* Orange */
+    #e11d48  /* Rose */
+    ```
+    </CodeGroup>
+  </Tab>
+
+  <Tab title="Pastel Math">
+    Light but readable palette for younger students.
+
+    **Palette ID:** `pastel-math`
+
+    ### Colors
+    <CodeGroup>
+    ```javascript Definition
+    {
+      id: "pastel-math",
+      name: "Pastel Math",
+      description: "Light but readable palette for younger students.",
+      colors: ["#60a5fa", "#34d399", "#fbbf24", "#fb7185", "#a78bfa", "#2dd4bf"]
+    }
+    ```
+
+    ```css Color Swatches
+    #60a5fa  /* Light Blue */
+    #34d399  /* Light Green */
+    #fbbf24  /* Light Amber */
+    #fb7185  /* Light Pink */
+    #a78bfa  /* Light Violet */
+    #2dd4bf  /* Light Teal */
+    ```
+    </CodeGroup>
+
+    <Info>
+      These softer colors are easier on the eyes and work well for elementary-level materials.
+    </Info>
+  </Tab>
+
+  <Tab title="Print Safe">
+    High-contrast colors that remain clear on print.
+
+    **Palette ID:** `print-safe`
+
+    ### Colors
+    <CodeGroup>
+    ```javascript Definition
+    {
+      id: "print-safe",
+      name: "Print Safe",
+      description: "High-contrast colors that remain clear on print.",
+      colors: ["#1d4ed8", "#047857", "#ca8a04", "#b91c1c", "#7c3aed", "#0f766e"]
+    }
+    ```
+
+    ```css Color Swatches
+    #1d4ed8  /* Dark Blue */
+    #047857  /* Dark Green */
+    #ca8a04  /* Dark Yellow */
+    #b91c1c  /* Dark Red */
+    #7c3aed  /* Dark Violet */
+    #0f766e  /* Dark Teal */
+    ```
+    </CodeGroup>
+
+    <Note>
+      These darker, high-contrast colors maintain clarity when printed, even on lower-quality printers or in black and white.
+    </Note>
+  </Tab>
+
+  <Tab title="Science Lab">
+    Cool tones with crisp separation.
+
+    **Palette ID:** `science-lab`
+
+    ### Colors
+    <CodeGroup>
+    ```javascript Definition
+    {
+      id: "science-lab",
+      name: "Science Lab",
+      description: "Cool tones with crisp separation.",
+      colors: ["#2563eb", "#14b8a6", "#84cc16", "#f59e0b", "#f43f5e", "#6366f1"]
+    }
+    ```
+
+    ```css Color Swatches
+    #2563eb  /* Blue */
+    #14b8a6  /* Teal */
+    #84cc16  /* Lime */
+    #f59e0b  /* Amber */
+    #f43f5e  /* Rose */
+    #6366f1  /* Indigo */
+    ```
+    </CodeGroup>
+  </Tab>
+
+  <Tab title="Editorial">
+    Clean palette for presentations.
+
+    **Palette ID:** `editorial`
+
+    ### Colors
+    <CodeGroup>
+    ```javascript Definition
+    {
+      id: "editorial",
+      name: "Editorial",
+      description: "Clean palette for presentations.",
+      colors: ["#0f766e", "#0284c7", "#7c3aed", "#ea580c", "#dc2626", "#4d7c0f"]
+    }
+    ```
+
+    ```css Color Swatches
+    #0f766e  /* Teal */
+    #0284c7  /* Sky */
+    #7c3aed  /* Violet */
+    #ea580c  /* Orange */
+    #dc2626  /* Red */
+    #4d7c0f  /* Olive */
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Palette Structure
+
+Each palette follows the same structure:
+
+```javascript
+{
+  id: string,           // Unique identifier
+  name: string,         // Display name
+  description: string,  // Usage guidance
+  colors: string[]      // Array of 6 hex colors
+}
+```
+
+## Default Palette
+
+The "Classroom" palette is set as the default:
+
+```javascript
+// From palettes.js:40
+export const DEFAULT_PALETTE_ID = CHART_PALETTES[0].id;
+```
+
+## Retrieving Palettes
+
+Use the helper function to get a palette by its ID:
+
+```javascript
+// From palettes.js:46-48
+export function getPaletteById(paletteId) {
+  return CHART_PALETTES.find((palette) => palette.id === paletteId) ?? CHART_PALETTES[0];
+}
+```
+
+This function returns the requested palette or falls back to the default "Classroom" palette if the ID is not found.
+
+## Color Application
+
+Colors are applied to chart data points in order, cycling through the palette if there are more data points than colors:
+
+```javascript
+// From App.jsx:306-315
+const resolvedColors = useMemo(
+  () =>
+    chartRows.map((row, index) => {
+      if (options.advancedColorsEnabled && options.customColors[row.id]) {
+        return options.customColors[row.id];
+      }
+      return palette.colors[index % palette.colors.length];
+    }),
+  [chartRows, options.advancedColorsEnabled, options.customColors, palette.colors]
+);
+```
+
+<Info>
+  If you have more than 6 data points, colors will repeat starting from the first color in the palette.
+</Info>
+
+## Advanced Color Swatches
+
+For custom color selection, Simple Charts provides a unified set of swatches from all palettes:
+
+```javascript
+// From palettes.js:42-44
+export const ADVANCED_SWATCHES = [
+  ...new Set(CHART_PALETTES.flatMap((palette) => palette.colors))
+];
+```
+
+This creates a deduplicated array of all unique colors across all palettes, perfect for color picker interfaces.
+
+## Custom Colors
+
+While palettes provide preset color schemes, Simple Charts also supports custom colors for individual data points:
+
+```javascript
+// From App.jsx:100-119 (default state)
+customColors: {},
+advancedColorsEnabled: false,
+```
+
+When `advancedColorsEnabled` is true, custom colors in the `customColors` object take precedence over palette colors:
+
+```javascript
+// From App.jsx:309-311
+if (options.advancedColorsEnabled && options.customColors[row.id]) {
+  return options.customColors[row.id];
+}
+```
+
+## Choosing the Right Palette
+
+### For Digital Display
+- **Classroom** - All-purpose, balanced colors
+- **Soft Report** - Professional presentations
+- **Pastel Math** - Young students, extended viewing
+
+### For Printing
+- **Print Safe** - Optimal for black & white printers
+- **Editorial** - Clean, professional handouts
+
+### For Specific Subjects
+- **Science Lab** - STEM content with cool tones
+- **Pastel Math** - Elementary math worksheets
+- **Editorial** - Literature and humanities
+
+<Note>
+  All palettes are designed to be accessible and maintain good contrast ratios, but "Print Safe" is specifically optimized for physical handouts.
+</Note>

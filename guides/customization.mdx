@@ -1,0 +1,356 @@
+---
+title: Customization
+description: Customize Simple Charts with theming, color palettes, and advanced color options
+---
+
+Simple Charts offers extensive customization options including light/dark themes, curated color palettes, and advanced per-item color control.
+
+## Theme Switching
+
+Simple Charts supports both light and dark themes with automatic preference detection.
+
+### How Theming Works
+
+The theme system uses:
+
+- **CSS custom properties**: Defined in `src/index.css`
+- **Tailwind dark mode**: Configured with class-based dark mode
+- **localStorage**: Persists user preference
+
+### Theme Implementation
+
+From `src/hooks/useTheme.js`:
+
+```javascript
+const THEME_STORAGE_KEY = "simple-charts:theme";
+
+function detectPreferredTheme() {
+  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === "dark" || savedTheme === "light") {
+    return savedTheme;
+  }
+  
+  // Fallback to system preference
+  return window.matchMedia("(prefers-color-scheme: dark)").matches 
+    ? "dark" 
+    : "light";
+}
+
+export function useTheme() {
+  const [theme, setTheme] = useState(detectPreferredTheme);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((currentTheme) => (currentTheme === "dark" ? "light" : "dark"));
+  }
+
+  return { theme, setTheme, toggleTheme };
+}
+```
+
+### Light Theme Variables
+
+From `src/index.css`:
+
+```css
+:root {
+  --background: 0 0% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+  --radius: 0.85rem;
+}
+```
+
+### Dark Theme Variables
+
+```css
+.dark {
+  --background: 222 47% 8%;
+  --foreground: 210 40% 96%;
+  --card: 222 40% 11%;
+  --card-foreground: 210 40% 96%;
+  --primary: 263 70% 62%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 32% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 32% 17%;
+  --muted-foreground: 215 20% 70%;
+  --accent: 217 32% 17%;
+  --accent-foreground: 210 40% 96%;
+  --border: 217 26% 23%;
+  --input: 217 26% 23%;
+  --ring: 263 70% 62%;
+}
+```
+
+<Note>
+  Theme preferences are automatically saved to `localStorage` and restored on page reload.
+</Note>
+
+## Color Palettes
+
+Simple Charts includes 6 curated color palettes designed for educational use.
+
+### Available Palettes
+
+From `src/constants/palettes.js`:
+
+```javascript
+export const CHART_PALETTES = [
+  {
+    id: "classroom",
+    name: "Classroom",
+    description: "Balanced tones for worksheets and slides.",
+    colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+  },
+  {
+    id: "soft-report",
+    name: "Soft Report",
+    description: "Muted and professional for handouts.",
+    colors: ["#4f46e5", "#0ea5e9", "#22c55e", "#eab308", "#f97316", "#e11d48"]
+  },
+  {
+    id: "pastel-math",
+    name: "Pastel Math",
+    description: "Light but readable palette for younger students.",
+    colors: ["#60a5fa", "#34d399", "#fbbf24", "#fb7185", "#a78bfa", "#2dd4bf"]
+  },
+  {
+    id: "print-safe",
+    name: "Print Safe",
+    description: "High-contrast colors that remain clear on print.",
+    colors: ["#1d4ed8", "#047857", "#ca8a04", "#b91c1c", "#7c3aed", "#0f766e"]
+  },
+  {
+    id: "science-lab",
+    name: "Science Lab",
+    description: "Cool tones with crisp separation.",
+    colors: ["#2563eb", "#14b8a6", "#84cc16", "#f59e0b", "#f43f5e", "#6366f1"]
+  },
+  {
+    id: "editorial",
+    name: "Editorial",
+    description: "Clean palette for presentations.",
+    colors: ["#0f766e", "#0284c7", "#7c3aed", "#ea580c", "#dc2626", "#4d7c0f"]
+  }
+];
+
+export const DEFAULT_PALETTE_ID = CHART_PALETTES[0].id; // "classroom"
+```
+
+### Palette Usage
+
+Colors are applied cyclically to chart items:
+
+```javascript
+const resolvedColors = chartRows.map((row, index) => {
+  if (options.advancedColorsEnabled && options.customColors[row.id]) {
+    return options.customColors[row.id];
+  }
+  return palette.colors[index % palette.colors.length];
+});
+```
+
+If you have more data items than colors in the palette, colors repeat from the beginning.
+
+## Advanced Color Customization
+
+The **Advanced Colors** section in ChartControlsPanel allows per-item color customization.
+
+### Enable Custom Colors
+
+From `src/components/ChartControlsPanel.jsx`:
+
+```jsx
+<SwitchRow
+  id="custom-color-toggle"
+  label="Enable custom item colors"
+  checked={options.advancedColorsEnabled}
+  onCheckedChange={(value) => onChangeOptions({ advancedColorsEnabled: value })}
+/>
+```
+
+### Color Swatch Picker
+
+When advanced colors are enabled, each data row gets a color picker with 16 preset swatches:
+
+```jsx
+<div className="mb-2 grid grid-cols-8 gap-1.5">
+  {advancedSwatches.slice(0, 16).map((swatch) => (
+    <button
+      type="button"
+      className={`h-6 rounded border ${
+        currentColor === swatch ? "ring-2 ring-primary ring-offset-1" : ""
+      }`}
+      style={{ backgroundColor: swatch }}
+      onClick={() => onSetCustomColor(row.id, swatch)}
+    />
+  ))}
+</div>
+```
+
+### Full Color Picker
+
+Enable the full HTML color picker for unlimited color options:
+
+```jsx
+<SwitchRow
+  id="full-color-toggle"
+  label="Show full color picker"
+  checked={options.showFullColorPicker}
+  onCheckedChange={(value) => onChangeOptions({ showFullColorPicker: value })}
+/>
+
+{options.showFullColorPicker ? (
+  <Input
+    type="color"
+    value={currentColor}
+    onChange={(event) => onSetCustomColor(row.id, event.target.value)}
+    className="h-10 w-20 p-1"
+  />
+) : null}
+```
+
+### Advanced Swatches
+
+The advanced color swatches are compiled from all palette colors:
+
+```javascript
+export const ADVANCED_SWATCHES = [
+  ...new Set(CHART_PALETTES.flatMap((palette) => palette.colors))
+];
+```
+
+This creates a unique set of all colors across all palettes (18 unique colors).
+
+### Reset Custom Colors
+
+Users can reset all custom colors back to the selected palette:
+
+```jsx
+<Button
+  type="button"
+  variant="outline"
+  size="sm"
+  onClick={onResetCustomColors}
+>
+  <RefreshCcw className="mr-2 h-3.5 w-3.5" />
+  Reset custom colors
+</Button>
+```
+
+Implementation:
+
+```javascript
+function handleResetCustomColors() {
+  setAppState((current) => ({
+    ...current,
+    options: {
+      ...current.options,
+      customColors: {}
+    }
+  }));
+}
+```
+
+## Custom Color Storage
+
+Custom colors are stored in the app state and persisted to `localStorage`:
+
+```javascript
+options: {
+  advancedColorsEnabled: false,
+  showFullColorPicker: false,
+  customColors: {}, // { [rowId]: "#hexcolor" }
+}
+```
+
+Colors are keyed by row ID, so they persist even when rows are reordered.
+
+## Tailwind Configuration
+
+Simple Charts uses Tailwind with custom color variables:
+
+```javascript
+// tailwind.config.js
+export default {
+  darkMode: ["class"],
+  theme: {
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))"
+        },
+        // ... more colors
+      }
+    }
+  }
+};
+```
+
+This allows Tailwind classes like `bg-primary`, `text-foreground`, etc. to automatically adapt to the current theme.
+
+## Example: Creating a Custom Palette
+
+To add a new color palette, edit `src/constants/palettes.js`:
+
+```javascript
+export const CHART_PALETTES = [
+  // ... existing palettes
+  {
+    id: "custom-theme",
+    name: "Custom Theme",
+    description: "Your custom color palette.",
+    colors: ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f7b731", "#5f27cd", "#00d2d3"]
+  }
+];
+```
+
+The palette will automatically appear in the Color Theme selector.
+
+<Note>
+  After modifying palettes, run `npm run build` to rebuild the application.
+</Note>
+
+## Chart Export Colors
+
+When exporting charts as PNG, colors are preserved exactly as shown:
+
+```javascript
+const chartStyleOverrides = {
+  titleColor: "#0f172a",
+  axisTextColor: "#334155",
+  gridColor: "rgba(148, 163, 184, 0.28)",
+  valueOverlayColor: "#1f2937",
+  tooltipBackgroundColor: "#0f172a"
+};
+```
+
+These ensure exported charts have consistent, print-safe colors regardless of theme.
+
+## Next Steps
+
+- [Deploy your customized app](/guides/deployment)
+- [Install as PWA](/guides/pwa-installation)

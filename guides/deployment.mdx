@@ -1,0 +1,135 @@
+---
+title: Deployment
+description: Deploy Simple Charts to Cloudflare Pages with Vite build process
+---
+
+Simple Charts is a static React application that can be deployed to Cloudflare Pages. This guide walks you through the deployment process.
+
+## Prerequisites
+
+- A GitHub or GitLab account
+- A Cloudflare account
+- Your Simple Charts repository pushed to GitHub/GitLab
+
+## Cloudflare Pages Deployment
+
+<Steps>
+  <Step title="Push to Git Repository">
+    Push your Simple Charts repository to GitHub or GitLab.
+
+    ```bash
+    git add .
+    git commit -m "Initial commit"
+    git push origin main
+    ```
+  </Step>
+
+  <Step title="Connect to Cloudflare Pages">
+    1. Go to your Cloudflare Dashboard
+    2. Navigate to **Workers & Pages**
+    3. Click **Create** → **Pages** → **Connect to Git**
+    4. Select your repository from the list
+  </Step>
+
+  <Step title="Configure Build Settings">
+    Set the following build configuration:
+
+    | Setting | Value |
+    |---------|-------|
+    | Framework preset | `Vite` |
+    | Build command | `npm run build` |
+    | Build output directory | `dist` |
+    | Root directory | `/` (default) |
+    | Node version | `20+` (recommended) |
+
+    <Note>
+      The build command runs `vite build` which compiles your React application and outputs static files to the `dist/` directory.
+    </Note>
+  </Step>
+
+  <Step title="Deploy">
+    Click **Save and Deploy**. Cloudflare Pages will:
+    
+    1. Install dependencies with `npm install`
+    2. Run the Vite build process
+    3. Deploy the compiled static files from `dist/`
+    4. Provide you with a `*.pages.dev` URL
+  </Step>
+
+  <Step title="Add Custom Domain (Optional)">
+    To use a custom domain:
+
+    1. Go to your Cloudflare Pages project settings
+    2. Navigate to **Custom domains**
+    3. Click **Set up a custom domain**
+    4. Enter your domain name (e.g., `charts.abmcodes.xyz`)
+    5. Follow the DNS configuration instructions
+  </Step>
+</Steps>
+
+## Build Process
+
+Simple Charts uses Vite for building. The build process:
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
+### Build Output
+
+When you run `npm run build`, Vite:
+
+- Bundles all React components
+- Optimizes assets (images, fonts, etc.)
+- Generates service worker for PWA functionality
+- Outputs everything to `dist/`
+
+<Note>
+  The application is completely static with no server-side code required.
+</Note>
+
+## Environment Configuration
+
+Simple Charts doesn't require environment variables for basic deployment. All configuration is handled client-side:
+
+- **Theme preferences**: Stored in `localStorage`
+- **Chart data**: Auto-saved to `localStorage` with key `teacher-chart-maker:v1`
+- **PWA manifest**: Configured in `vite.config.js`
+
+## Automatic Deployments
+
+Cloudflare Pages automatically deploys when you push to your repository:
+
+- **Production**: Deployments from your main/master branch
+- **Preview**: Deployments from pull requests and other branches
+
+Each deployment gets a unique URL for testing before going live.
+
+## Troubleshooting
+
+### Build Fails
+
+If the build fails, check:
+
+1. **Node version**: Ensure you're using Node 20+
+2. **Dependencies**: Make sure `package.json` includes all required dependencies
+3. **Build logs**: Review Cloudflare's build logs for specific errors
+
+### PWA Not Working
+
+If PWA features aren't working:
+
+1. Ensure you're accessing the site via HTTPS (Cloudflare provides this automatically)
+2. Check that service worker is registered in browser DevTools
+3. Verify `manifest.json` is accessible at `/manifest.json`
+
+## Next Steps
+
+- [Configure PWA Installation](/guides/pwa-installation)
+- [Customize Theme and Colors](/guides/customization)

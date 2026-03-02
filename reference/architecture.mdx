@@ -1,0 +1,384 @@
+---
+title: Architecture
+description: Understanding Simple Charts' React component structure, Chart.js integration, and state management patterns.
+---
+
+## Overview
+
+Simple Charts is built as a modern React application with Chart.js for rendering, react-router-dom for routing, and a custom state persistence layer. The architecture follows a component-based design with clear separation of concerns.
+
+## Technology Stack
+
+- **React 18**: Component-based UI with hooks
+- **Chart.js 4**: Canvas-based chart rendering
+- **react-chartjs-2**: React wrapper for Chart.js
+- **react-router-dom**: Client-side routing
+- **Tailwind CSS**: Utility-first styling
+- **Vite**: Build tool and dev server
+
+## Application Entry Point
+
+The application initializes in `main.jsx:10-16`:
+
+```jsx
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);
+```
+
+### Progressive Web App
+
+Simple Charts registers as a PWA using Vite's PWA plugin (`main.jsx:8`):
+
+```jsx
+registerSW({ immediate: true });
+```
+
+## Routing Structure
+
+The app uses `react-router-dom` with three main routes defined in `App.jsx:648-667`:
+
+| Route | Component | Purpose |
+|-------|-----------|----------|
+| `/` | `ChartBuilderPage` | Main chart creation interface |
+| `/terms-and-conditions` | `TermsAndConditionsPage` | Legal terms |
+| `/privacy-policy` | `PrivacyPolicyPage` | Privacy information |
+| `*` (catch-all) | Redirect to `/` | Handle unknown routes |
+
+```jsx
+<Routes>
+  <Route path="/" element={<ChartBuilderPage theme={theme} onToggleTheme={toggleTheme} />} />
+  <Route path="/terms-and-conditions" element={<AppRouteLayout>...</AppRouteLayout>} />
+  <Route path="/privacy-policy" element={<AppRouteLayout>...</AppRouteLayout>} />
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
+```
+
+## Component Hierarchy
+
+```
+App
+└── Routes
+    ├── ChartBuilderPage
+    │   └── AppShell
+    │       ├── Header (with theme toggle)
+    │       ├── Main
+    │       │   ├── DataTableEditor
+    │       │   ├── ChartControlsPanel
+    │       │   ├── ChartPreview
+    │       │   └── ExportActions
+    │       └── Footer
+    └── Legal Pages (AppRouteLayout)
+```
+
+## Core Components
+
+### ChartBuilderPage
+
+The main application component (`App.jsx:256-634`) manages:
+
+- **State**: Chart data, options, and validation
+- **Persistence**: Auto-save to localStorage
+- **Validation**: Real-time data validation
+- **Export**: PNG download functionality
+
+### AppShell
+
+Layout wrapper (`AppShell.jsx:5-46`) providing:
+
+- Application header with branding
+- Theme toggle button
+- Footer with legal links
+- Consistent max-width container (`max-w-7xl`)
+
+### DataTableEditor
+
+Data input component (`DataTableEditor.jsx:9-126`):
+
+- Label and value input fields
+- Value mode selector (exact numbers vs percentages)
+- Row add/remove/clear actions
+- Real-time validation error display
+
+### ChartControlsPanel
+
+Chart configuration component (`ChartControlsPanel.jsx:26-215`):
+
+- Chart type selector (pie/bar)
+- Title and axis labels
+- Legend and value label toggles
+- Color palette selection
+- Advanced per-item color customization
+
+### ChartPreview
+
+Chart rendering component (`ChartPreview.jsx:31-67`):
+
+- Renders Pie or Bar chart using react-chartjs-2
+- Displays validation issues when chart cannot render
+- Uses `forwardRef` to expose Chart.js instance for export
+
+```jsx
+const ChartPreview = forwardRef(function ChartPreview(
+  { chartType, chartData, chartOptions, canRender, issues },
+  ref
+) {
+  return (
+    <Card>
+      {canRender ? (
+        chartType === "pie" ? (
+          <Pie ref={ref} data={chartData} options={chartOptions} />
+        ) : (
+          <Bar ref={ref} data={chartData} options={chartOptions} />
+        )
+      ) : (
+        /* Display issues */
+      )}
+    </Card>
+  );
+});
+```
+
+## Chart.js Integration
+
+### Registration
+
+Chart.js components and plugins are registered in `ChartPreview.jsx:19-29`:
+
+```jsx
+ChartJS.register(
+  ArcElement,      // For pie charts
+  BarElement,      // For bar charts
+  CategoryScale,   // X-axis categories
+  LinearScale,     // Y-axis numbers
+  Tooltip,         // Interactive tooltips
+  Legend,          // Chart legend
+  Title,           // Chart title
+  valueOverlayPlugin  // Custom plugin for value labels
+);
+```
+
+### Font Configuration
+
+Global font family set for all charts (`ChartPreview.jsx:29`):
+
+```jsx
+ChartJS.defaults.font.family = 
+  '"Inter", "Segoe UI", system-ui, -apple-system, "Noto Serif Bengali", "Nirmala UI", sans-serif';
+```
+
+### Custom Plugin: valueOverlayPlugin
+
+Custom Chart.js plugin (`valueOverlayPlugin.js:1-98`) that draws value labels directly on chart elements:
+
+- **Pie charts**: Shows percentages at center of each slice
+- **Bar charts**: Shows values above/below bars
+- **Localization**: Supports Bengali numeral rendering
+
+```js
+export const valueOverlayPlugin = {
+  id: "valueOverlay",
+  afterDatasetsDraw(chart, _args, pluginOptions) {
+    if (!pluginOptions?.enabled) return;
+    
+    // Draw value labels on each data point
+    dataElements.forEach((element, index) => {
+      const { x, y } = element.tooltipPosition();
+      ctx.fillText(localizedText, x, y);
+    });
+  }
+};
+```
+
+## State Management
+
+### Application State Structure
+
+The app uses a single state object (`App.jsx:100-119`):
+
+```js
+{
+  rows: [
+    { id: string, label: string, value: string },
+    // ...
+  ],
+  options: {
+    chartType: "pie" | "bar",
+    valueMode: "exact" | "percentage",
+    title: string,
+    showLegend: boolean,
+    showLabels: boolean,
+    xAxisLabel: string,
+    yAxisLabel: string,
+    paletteId: string,
+    advancedColorsEnabled: boolean,
+    showFullColorPicker: boolean,
+    customColors: { [rowId]: color },
+    exportBackground: "white" | "transparent",
+    exportResolution: "low" | "medium" | "high"
+  }
+}
+```
+
+### State Hooks
+
+#### usePersistedState
+
+Custom hook for auto-saving state to localStorage (`usePersistedState.js:7-45`):
+
+```js
+const [appState, setAppState] = usePersistedState(
+  STORAGE_KEY,           // "teacher-chart-maker:v1"
+  buildDefaultState,     // Initial state factory
+  sanitizeState          // State validator/sanitizer
+);
+```
+
+See [Storage](/reference/storage) for details.
+
+#### useTheme
+
+Custom hook for dark/light mode (`useTheme.js:18-35`):
+
+```js
+const { theme, toggleTheme } = useTheme();
+```
+
+- Persists preference to localStorage (`"simple-charts:theme"`)
+- Detects system preference on first load
+- Toggles `dark` class on `document.documentElement`
+
+## Data Flow
+
+### Update Flow
+
+1. **User Input** → Component event handler
+2. **State Update** → `setAppState()` called
+3. **Persistence** → `usePersistedState` saves to localStorage (200ms debounce)
+4. **Validation** → `validateRows()` runs via `useMemo`
+5. **Chart Update** → Chart.js re-renders with new data
+
+### Validation Pipeline
+
+`validateRows()` function (`App.jsx:177-254`) performs:
+
+1. **Field Validation**: Check required fields and number parsing
+2. **Value Range**: Validate percentages (0-100) if in percentage mode
+3. **Chart-Specific**: Pie chart rules (no negatives, at least one positive)
+4. **Row Filtering**: Only include complete, valid rows in chart
+
+```js
+const validation = useMemo(
+  () => validateRows(rows, options.chartType, options.valueMode),
+  [rows, options.chartType, options.valueMode]
+);
+
+const { validRows, fieldErrors, blockingIssues, exportIssues } = validation;
+```
+
+### Computed Values
+
+Several derived values use `useMemo` for performance:
+
+- `chartRows`: Valid rows after validation (`App.jsx:294`)
+- `resolvedColors`: Final colors with custom overrides (`App.jsx:306-315`)
+- `chartData`: Chart.js data object (`App.jsx:317-333`)
+- `chartOptions`: Chart.js configuration (`App.jsx:340-486`)
+
+## Internationalization
+
+### Bengali Numeral Support
+
+The app automatically detects and preserves Bengali numerals (০-৯):
+
+1. **Input**: Accepts both Latin (0-9) and Bengali digits
+2. **Parsing**: Normalizes to Latin for calculations (`normalizeNumericInput`, `App.jsx:51-59`)
+3. **Display**: Re-converts to Bengali if original input used Bengali (`formatChartNumber`, `App.jsx:73-83`)
+
+```js
+const BENGALI_DIGITS = {
+  "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
+  "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9"
+};
+```
+
+The app tracks which rows use Bengali numerals (`useBengaliNumerals` flag) and passes this information to the chart for consistent display.
+
+## Export System
+
+### High-DPI Export
+
+Charts export as PNG with configurable pixel ratios (`App.jsx:21-25`):
+
+```js
+const EXPORT_PIXEL_RATIO = {
+  low: 2,      // 2x resolution
+  medium: 4,   // 4x resolution
+  high: 8      // 8x resolution
+};
+```
+
+### Export Process
+
+1. **Preparation**: Apply style overrides for consistent export colors
+2. **Resize**: Scale chart to high DPI using `devicePixelRatio`
+3. **Render**: Wait for Chart.js to re-render at high resolution
+4. **Capture**: Copy canvas to new canvas with background
+5. **Download**: Convert to blob and trigger browser download
+6. **Restore**: Reset chart to original DPI and styles
+
+See `chartExport.js:91-147` for implementation details.
+
+## Performance Optimizations
+
+### Memoization
+
+- All derived chart data uses `useMemo` to prevent unnecessary recalculations
+- Validation only re-runs when rows or chart type changes
+- Chart options object is memoized to prevent Chart.js re-renders
+
+### Debounced Persistence
+
+`usePersistedState` debounces localStorage writes by 200ms (`usePersistedState.js:33-39`):
+
+```js
+const saveTimer = window.setTimeout(() => {
+  window.localStorage.setItem(storageKey, JSON.stringify(state));
+}, 200);
+```
+
+### Animation Duration
+
+Chart animations are kept short (350ms) for responsive feel (`App.jsx:344-346`):
+
+```js
+animation: {
+  duration: 350
+}
+```
+
+## Error Handling
+
+### Graceful Degradation
+
+- localStorage errors are silently caught (quota exceeded, private mode)
+- Invalid stored state falls back to default via `sanitizeState`
+- Missing Chart.js canvas gracefully returns error message
+
+### User-Facing Validation
+
+Two levels of validation issues:
+
+1. **Blocking Issues**: Prevent chart rendering entirely
+2. **Export Issues**: Allow preview but block PNG export
+
+Example:
+```js
+if (chartType === "pie" && validRows.some(row => row.value < 0)) {
+  blockingIssues.push("Pie charts do not support negative values.");
+}
+```
